@@ -1,0 +1,16 @@
+{
+  "version": "v37",
+  "changes": [
+    "Fix visibilita quiz Arte: showView ora aggiorna anche la classe active.",
+    "Aggiunto Esamone Arte sbloccato solo dopo completamento di tutte le 80 opere.",
+    "Aggiunta fascia gialla full-width per corso temporaneo Arte fino al 15 luglio.",
+    "Aggiornato service worker a v37."
+  ],
+  "protected_files_untouched": [
+    "questions.js",
+    "questions.json",
+    "explanations.js",
+    "bagnino_questions.js",
+    "bagnino_explanations.js"
+  ]
+}

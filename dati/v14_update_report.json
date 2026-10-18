@@ -1,0 +1,39 @@
+{
+  "version": "v14",
+  "date": "2026-05-03T18:40:14.002427",
+  "purpose": "Forza rimozione delle 22 domande corrette dai progressi utenti, popup esplicito con domande rimosse, rimozione manuale da domande fatte.",
+  "correctedQuestionIds": [
+    15,
+    24,
+    122,
+    183,
+    208,
+    251,
+    255,
+    261,
+    264,
+    341,
+    388,
+    389,
+    432,
+    454,
+    456,
+    459,
+    679,
+    686,
+    783,
+    837,
+    853,
+    856
+  ],
+  "protectedFilesNotEdited": [
+    "questions.js",
+    "questions.json",
+    "explanations.js"
+  ],
+  "sha256": {
+    "questions.js": "ce2dedfa6f219d589dcce7b6947db339a3aba713cf03c2adf162bef47da0b740",
+    "questions.json": "b98fcfcb963d8283ace4f4cd4447e24ed1722ca7bfd756857ea5de40e074867d",
+    "explanations.js": "e25531f63a61ced3f7c19fb3b47862daebfe5e6f5cbb44e2786a5b933843a176"
+  }
+}

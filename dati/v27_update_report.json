@@ -1,0 +1,20 @@
+{
+  "version": "v27",
+  "changes": [
+    "Quiz misto impostato a massimo 20 domande casuali per sessione su entrambi i corsi",
+    "Il quiz misto continua a pescare solo domande non completate; l'ultima sessione puo contenere meno di 20 domande se rimangono meno domande",
+    "Rigetto di una richiesta corso secondario non blocca più l'account già approvato",
+    "Prima bocciatura di un corso secondario mostra il motivo e permette richiesta di ricontrollo",
+    "Seconda bocciatura/revisione bocciata blocca solo quel corso, non tutto l'account",
+    "Se un corso secondario viene approvato a un utente già verificato, non viene richiesta nuova verifica email",
+    "Compatibilità utenti legacy: aggiungere Bagnino non rimuove l'accesso Istruttore già esistente",
+    "Admin avvisato che i corsi non selezionati in una richiesta multipla saranno segnati come non approvati"
+  ],
+  "dataFilesUntouched": [
+    "questions.js",
+    "questions.json",
+    "explanations.js",
+    "bagnino_questions.js",
+    "bagnino_explanations.js"
+  ]
+}

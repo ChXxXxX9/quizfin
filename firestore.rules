@@ -1,0 +1,164 @@
+rules_version = '2';
+// Quiz Nuoto — regole Firestore (v48, senza funzioni server).
+// Le operazioni account girano nel browser (account-actions.js): qui si decide chi può scrivere cosa.
+// Principio: ogni utente scrive i propri dati di studio e la "contabilità" delle proprie richieste,
+// mai i propri permessi (appVerified, courseAccess, banned, corsi bloccati, rifiuti…): quelli solo l'admin.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isOwnerBootstrap() { return signedIn() && request.auth.uid == 'uPsEYGwQwrXZEwt5KID6DnVt51p2'; }
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
+    }
+    function isOwnerAdmin() {
+      return isAdmin()
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'owner';
+    }
+    function courseIds() { return ['istruttore', 'bagnino', 'arte']; }
+    function validCourseList() {
+      return request.resource.data.requestedCourses is list
+        && request.resource.data.requestedCourses.size() >= 1
+        && request.resource.data.requestedCourses.size() <= 3
+        && request.resource.data.requestedCourses[0] in courseIds()
+        && (request.resource.data.requestedCourses.size() == 1 || request.resource.data.requestedCourses[1] in courseIds())
+        && (request.resource.data.requestedCourses.size() < 3 || request.resource.data.requestedCourses[2] in courseIds());
+    }
+
+    // ---------- Permessi dell'utente su se stesso ----------
+    function accessOf(data) { return data.get('access', {}); }
+    // Contabilità delle richieste (corsi in attesa, stato richiesta, ricontrollo)
+    function requestKeys() {
+      return ['accountStatus', 'pendingCourses', 'pendingAt', 'courseRequestStatus', 'courseReviewPending',
+              'courseCanRequestReview', 'reviewPending', 'reviewRequestedAt'];
+    }
+    function termsKeys() { return ['termsAcceptedAt', 'termsVersion', 'noticesSeen']; }
+    // Solo con email davvero verificata (token Firebase)
+    function verifyKeys() { return ['requiresEmailVerification', 'emailVerifiedAt', 'verificationRequiredVersion']; }
+    function courseMapOk(after, name) {
+      return !(name in after) || (after[name] is map && after[name].keys().hasOnly(courseIds()));
+    }
+    function validSelfAccess(before, after) {
+      let changed = after.diff(before).affectedKeys();
+      return changed.hasOnly(requestKeys().concat(termsKeys()).concat(verifyKeys()))
+        && (!changed.hasAny(verifyKeys()) || request.auth.token.email_verified == true)
+        // un utente bloccato non può toccare le sue richieste
+        && (!changed.hasAny(requestKeys()) || before.get('banned', false) != true)
+        && (!changed.hasAny(['accountStatus']) || after.get('accountStatus', 'pending') in ['pending', 'review'])
+        && (!changed.hasAny(['pendingCourses']) || !('pendingCourses' in after)
+            || (after.pendingCourses is list && after.pendingCourses.size() <= 3))
+        && (!changed.hasAny(['reviewPending']) || !('reviewPending' in after) || after.reviewPending is bool)
+        && courseMapOk(after, 'courseRequestStatus')
+        && courseMapOk(after, 'courseReviewPending')
+        && courseMapOk(after, 'courseCanRequestReview');
+    }
+    // Stato account dell'utente che fa la richiesta (documento può non esistere ancora)
+    function myAccess() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? accessOf(get(/databases/$(database)/documents/users/$(request.auth.uid)).data)
+        : {};
+    }
+    function courseBlockedForMe(course) { return myAccess().get('courseBlocked', {}).get(course, false) == true; }
+    function requestedCoursesNotBlocked() {
+      let c = request.resource.data.requestedCourses;
+      return !courseBlockedForMe(c[0])
+        && (c.size() < 2 || !courseBlockedForMe(c[1]))
+        && (c.size() < 3 || !courseBlockedForMe(c[2]));
+    }
+
+    match /admins/{adminId} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == adminId);
+      allow create: if (isOwnerBootstrap() && adminId == request.auth.uid) || isOwnerAdmin();
+      allow update, delete: if (isOwnerBootstrap() && adminId == request.auth.uid) || isOwnerAdmin();
+    }
+
+    match /users/{userId} {
+      // Dati di studio e profilo liberi per il proprietario; in "access" solo le chiavi consentite sopra
+      allow create: if signedIn() && request.auth.uid == userId
+        && validSelfAccess({}, accessOf(request.resource.data));
+      allow read: if (signedIn() && request.auth.uid == userId) || isAdmin();
+      allow update: if isAdmin()
+        || (signedIn() && request.auth.uid == userId
+            && validSelfAccess(accessOf(resource.data), accessOf(request.resource.data)));
+      allow delete: if isAdmin();
+
+      match /courseData/{courseId} {
+        allow read, write: if (signedIn() && request.auth.uid == userId) || isAdmin();
+      }
+
+      match /studyGoals/{courseId} {
+        allow read, write: if (signedIn() && request.auth.uid == userId) || isAdmin();
+      }
+
+      match /fadProgress/{courseId} {
+        allow read, write: if (signedIn() && request.auth.uid == userId) || isAdmin();
+      }
+    }
+
+    match /accountRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'firstName', 'lastName', 'email', 'requestedCourses', 'message',
+             'status', 'source', 'reviewRequest', 'isCourseAccessRequest', 'previousRejectNote',
+             'previousCourseRejectNotes', 'previousRejectedAt', 'rejectedCount', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status in ['pending', 'review']
+        && request.resource.data.email is string && request.resource.data.email.size() <= 200
+        && request.resource.data.firstName is string && request.resource.data.firstName.size() <= 80
+        && request.resource.data.lastName is string && request.resource.data.lastName.size() <= 80
+        && (!('message' in request.resource.data)
+            || (request.resource.data.message is string && request.resource.data.message.size() <= 1000))
+        && validCourseList()
+        && myAccess().get('banned', false) != true
+        && requestedCoursesNotBlocked();
+      // L'utente vede solo le proprie richieste (serve a evitare doppioni)
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.active == true && (resource.data.scope == 'global' || resource.data.scope in ['istruttore', 'bagnino', 'arte'] || resource.data.targetUid == request.auth.uid));
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /leaderboards/{leaderboardId} {
+      allow read: if signedIn();
+      match /daily/{dayKey}/scores/{scoreId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn()
+          && scoreId == request.auth.uid
+          && request.resource.data.uid == request.auth.uid;
+        allow delete: if isAdmin();
+      }
+      match /allTime/{scopeId}/scores/{scoreId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn()
+          && scoreId == request.auth.uid
+          && request.resource.data.uid == request.auth.uid;
+        allow delete: if isAdmin();
+      }
+    }
+
+    // Impostazioni globali: blocchi/manutenzione per sito, corsi e funzioni, promozione Nuotifica (doc "promo")
+    match /courseSettings/{courseId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Classifica streak: una per corso, courseLeaderboards/{corso}/entries/{uid}
+    match /courseLeaderboards/{courseId}/entries/{userId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.auth.uid == userId
+        && courseId in ['istruttore', 'bagnino', 'arte'];
+      allow delete: if isAdmin();
+    }
+
+    // Catalogo video FAD (corso istruttore): letto da chiunque loggato, scritto solo dall'admin
+    match /fadVideos/{videoId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

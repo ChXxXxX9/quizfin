@@ -1,0 +1,18 @@
+{
+  "version": "v30",
+  "title": "Login layout grande e presentabile",
+  "changes": [
+    "Pagina login trasformata in layout grande a due pannelli con branding Quiz Nuoto.",
+    "Aggiunto pannello introduttivo con nome sito, corsi disponibili e sintesi accessi controllati.",
+    "Area accesso email/password, Google, richiesta account e recupero password resa più grande e leggibile.",
+    "Layout responsive per mobile e tablet.",
+    "Service worker aggiornato a cache v30."
+  ],
+  "dataFilesUntouched": [
+    "questions.js",
+    "questions.json",
+    "explanations.js",
+    "bagnino_questions.js",
+    "bagnino_explanations.js"
+  ]
+}

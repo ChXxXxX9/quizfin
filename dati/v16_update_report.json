@@ -1,0 +1,19 @@
+{
+  "version": "v16",
+  "changes": [
+    "Added Ripassone special mode with the 22 corrected answer questions and a personal 12-hour countdown.",
+    "Added Esamone finale locked card, grey/locked until the user completes 1000/1000 mixed quiz questions.",
+    "Esamone: 50 adaptive questions, 20-minute fixed timer, pass threshold 40/50, AMMESSO/NON AMMESSO only.",
+    "Esamone warning explains that NON AMMESSO is only an internal simulation result, not the official exam admission outcome.",
+    "First Esamone attempt is saved as official; later attempts can be repeated freely without changing official result.",
+    "Esamone status is shown in the top dashboard and stats.",
+    "Added timer warnings at 5 minutes and 1 minute for Esamone.",
+    "No suggestions or explanations during Esamone; explanations remain available after completion through result review."
+  ],
+  "protected_files_unchanged": {
+    "questions.js": "ce2dedfa6f219d589dcce7b6947db339a3aba713cf03c2adf162bef47da0b740",
+    "questions.json": "b98fcfcb963d8283ace4f4cd4447e24ed1722ca7bfd756857ea5de40e074867d",
+    "explanations.js": "e25531f63a61ced3f7c19fb3b47862daebfe5e6f5cbb44e2786a5b933843a176"
+  },
+  "corrected_answer_ids": [15,24,122,183,208,251,255,261,264,341,388,389,432,454,456,459,679,686,783,837,853,856]
+}

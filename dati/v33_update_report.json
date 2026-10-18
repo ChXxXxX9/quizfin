@@ -1,0 +1,13 @@
+{
+  "version": "v33",
+  "title": "Duo-inspired visual simplification",
+  "changes": [
+    "Redesign grafico generale ispirato alle piattaforme learning gamificate: più spazio, meno caos, card più leggibili",
+    "Login ridisegnato con struttura hero + accesso, testi più pubblici e meno tecnici",
+    "Scelta corsi semplificata in due grandi card chiare",
+    "Home dei corsi riorganizzata come percorso verticale con modalità più leggibili",
+    "Bottoni e card resi più coerenti: bordi spessi, angoli arrotondati, feedback visivo pulito",
+    "Aggiornato service worker a v33"
+  ],
+  "dataFilesTouched": false
+}

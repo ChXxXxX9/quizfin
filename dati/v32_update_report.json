@@ -1,0 +1,13 @@
+{
+  "version": "v32",
+  "focus": "login real fullscreen layout",
+  "changes": [
+    "Login non dipende più dalla classe app-locked per il layout full-screen",
+    "Card accesso estesa a tutta la larghezza disponibile dello schermo",
+    "Layout desktop a due colonne molto più ampio",
+    "Form login in colonna larga e leggibile",
+    "Hero con logo reale mantenuto e ingrandito",
+    "Service worker aggiornato"
+  ],
+  "dataFilesTouched": false
+}

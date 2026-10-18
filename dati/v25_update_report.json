@@ -1,0 +1,11 @@
+{
+  "version": "v25",
+  "changes": [
+    "Fix pagina account verificato: resta visibile finché l’utente clicca Entra nel sito",
+    "Fix flash/salto automatico su scelta corsi dopo verifica email",
+    "Fix falso accesso Istruttore per utenti approvati solo Bagnino",
+    "Fix richiesta accesso secondo corso: non dice più già accesso se non autorizzato",
+    "Fix errore permessi entrando nei corsi dopo verifica email",
+    "Link verifica email con ritorno al sito tramite continue URL"
+  ]
+}

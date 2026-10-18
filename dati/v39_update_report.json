@@ -1,0 +1,10 @@
+{
+  "version": "v39",
+  "changes": [
+    "Aggiunta modalità Arte: Sudoku delle Opere",
+    "Modalità Sudoku: Autore, Data, Luogo di conservazione, Corrente artistica, Misto",
+    "Gameplay con griglia 9x9, celle iniziali, vite, punti e completamento tramite riconoscimento opere",
+    "Statistiche Arte aggiornate anche dalle risposte del Sudoku"
+  ],
+  "dataFilesTouched": false
+}

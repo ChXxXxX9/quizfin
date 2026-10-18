@@ -1,0 +1,12 @@
+{
+  "version": "v24",
+  "changes": [
+    "Admin bypass: nessuna verifica email/termini richiesta agli admin",
+    "Flusso stato account trasformato in pagina grande con barra avanzamento",
+    "Verifica email richiesta solo ai nuovi account approvati da v24, non agli utenti legacy gia dentro",
+    "Ripristinati login e registrazione con Google con approvazione admin",
+    "Admin puo nominare/rimuovere altri admin se owner",
+    "Admin puo vedere statistiche Istruttore o Bagnino con selettore",
+    "Accessi corsi e richieste restano separati"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "csv_rows": 1000,
+  "unique_csv_ids": 1000,
+  "explanations_included": 1000,
+  "missing_ids": [],
+  "cache_version": "quiz-nuoto-v9"
+}

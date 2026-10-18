@@ -1,0 +1,118 @@
+/* Streak e obiettivo di studio — componenti del sistema "Cronometro".
+   Il fuoco (emoji, livelli, animazione) è volutamente identico a prima. */
+
+@layer components {
+  /* ---------- Riquadro nel corso ---------- */
+  .study-goal-widget {
+    display: grid;
+    grid-template-areas: "head" "body" "actions";
+    gap: 14px;
+    padding: clamp(16px, 3.6vw, 22px);
+    border-radius: var(--r-l);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    container-type: inline-size;
+  }
+  .study-goal-widget .study-widget-head { display: contents; }
+  .study-widget-head > div:first-child { grid-area: head; min-width: 0; }
+  .study-widget-head .eyebrow { color: var(--rope-ink); }
+  .study-widget-head h2 { font-size: var(--step-1); }
+  .study-widget-actions { grid-area: actions; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .study-widget-actions > button { width: 100%; }
+  .study-widget-body { grid-area: body; display: flex; align-items: center; gap: 16px; }
+  .study-flame-wrap { display: grid; justify-items: center; gap: 2px; min-width: 76px; text-align: center; }
+  .study-flame-wrap strong { font-size: 2.1rem; line-height: 1; font-variant-numeric: tabular-nums; }
+  .study-flame-wrap span { font-size: var(--step--2); color: var(--ink-2); }
+  .study-widget-copy { display: grid; gap: 4px; flex: 1; min-width: 0; }
+  .study-widget-copy > strong { font-size: var(--step-0); }
+  .study-widget-copy > span { font-size: var(--step--2); color: var(--ink-2); line-height: 1.45; }
+  .study-mini-progress { height: 8px; margin-top: 4px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+  .study-mini-progress span { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--rope); transition: width .5s var(--ease); }
+  .study-mini-progress-text { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Il fuoco */
+  .study-fire { font-size:3.1rem; line-height:1; filter: drop-shadow(0 5px 12px rgba(240,110,40,.28)); transform-origin:center bottom; transition:transform .25s ease, filter .25s ease; animation:studyFireFloat 1.8s ease-in-out infinite; }
+  .study-fire[data-level="0"] { opacity:.35; filter:grayscale(.8); animation:none; }
+  .study-fire[data-level="1"] { transform:scale(1.05); }
+  .study-fire[data-level="2"] { transform:scale(1.12); }
+  .study-fire[data-level="3"] { transform:scale(1.2); }
+  .study-fire[data-level="4"], .study-fire[data-level="5"] { transform:scale(1.3); }
+  .study-fire[data-level="6"], .study-fire[data-level="7"], .study-fire[data-level="8"], .study-fire[data-level="9"], .study-fire[data-level="10"] { transform:scale(1.42); }
+
+  /* ---------- Riquadro nel portale: una riga per corso ---------- */
+  .study-portal-widget { grid-template-areas: "head" "grid"; }
+  .study-portal-widget .study-widget-head { display: block; grid-area: head; }
+  .study-portal-grid { grid-area: grid; display: grid; gap: 8px; }
+  @container (min-width: 620px) { .study-portal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .study-portal-tile {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--r-m);
+    background: var(--surface-2);
+    min-width: 0;
+  }
+  .study-portal-tile .study-fire { grid-row: 1 / span 2; font-size: 1.9rem; text-align: center; }
+  .study-portal-text { display: contents; }
+  .study-portal-text b { grid-column: 2; font-size: var(--step--1); line-height: 1.25; min-width: 0; }
+  .study-portal-text small { grid-column: 2; font-size: var(--step--2); color: var(--ink-2); line-height: 1.3; }
+  .study-portal-streak { grid-column: 3; grid-row: 1 / span 2; font-size: var(--step--2); color: var(--ink-2); white-space: nowrap; text-align: right; }
+  .study-portal-streak strong { font-size: 1.7rem; line-height: 1; color: var(--ink); margin-right: 2px; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Finestre obiettivo e classifica ---------- */
+  .study-goal-modal, .study-leaderboard-modal { z-index: 1200; }
+  .study-goal-card, .study-leaderboard-card { max-width: 640px; }
+  .study-goal-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+  .study-goal-summary > div { display: grid; gap: 4px; padding: 14px; border-radius: var(--r-m); background: var(--surface-2); min-width: 0; }
+  .study-goal-summary strong { font-size: var(--step-2); line-height: 1.05; }
+  .study-goal-summary span, .study-help { font-size: var(--step--2); color: var(--ink-2); }
+  .study-goal-mode-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+  .study-mode-btn, .study-target-btn {
+    min-height: 48px;
+    padding: 10px;
+    border-radius: var(--r-m);
+    border: 1.5px solid var(--line-2);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .study-mode-btn.active, .study-target-btn.active { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-ink); }
+  .study-target-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .study-target-btn span { display: block; margin-top: 2px; font-size: var(--step--2); font-weight: 400; color: var(--ink-2); }
+  .study-inline-label { display: grid; gap: 6px; margin-top: 14px; font-size: var(--step--2); font-weight: 700; color: var(--ink-2); }
+  .study-calculation { display: grid; gap: 4px; margin-top: 14px; padding: 14px 16px; border-radius: var(--r-m); background: var(--brand-soft); }
+  .study-calculation strong { font-size: var(--step-2); color: var(--brand-ink); }
+  .study-calculation span { font-size: var(--step--2); color: var(--ink-2); }
+  .study-goal-error { min-height: 18px; }
+  .study-leaderboard-list { display: grid; gap: 6px; margin-top: 12px; }
+  .study-rank-row { display: grid; grid-template-columns: 30px 30px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--r-m); background: var(--surface-2); }
+  .study-rank-row.current { background: var(--brand-soft); }
+  .study-rank-fire { font-size: 1.2rem; }
+  .study-rank-row div { min-width: 0; }
+  .study-rank-row b, .study-rank-row small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .study-rank-row small { color: var(--ink-2); font-size: var(--step--2); }
+  .study-rank-row em { font-style: normal; font-weight: 700; white-space: nowrap; }
+  .study-your-rank { margin-top: 12px; font-size: var(--step--2); color: var(--ink-2); }
+  .study-leader-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 6px; }
+
+  /* ---------- Traguardo raggiunto ---------- */
+  .study-milestone-flash::after { content:""; position:fixed; inset:0; z-index:1190; pointer-events:none; box-shadow:inset 0 0 0 9999px rgba(255,185,70,.10); animation:studyFlash .95s ease-out forwards; }
+  .study-milestone-overlay { position:fixed; inset:0; z-index:1300; display:grid; place-items:center; padding:16px; background: oklch(15% 0.03 var(--h) / 0.5); }
+  .study-milestone-card { width:min(420px, calc(100vw - 30px)); padding:30px; border-radius:28px; text-align:center; background:var(--surface); box-shadow:var(--shadow-3); animation:studyPop .4s ease-out; }
+  .study-big-fire { font-size:5.5rem; line-height:1; filter:drop-shadow(0 10px 22px rgba(240,110,40,.32)); animation:studyFireFloat .9s ease-in-out infinite; }
+  .study-milestone-card h2 { margin:6px 0; font-size:2.6rem; }
+  .study-milestone-card p:not(.eyebrow) { color:var(--ink-2); }
+
+  @keyframes studyFireFloat { 0%,100% { transform:translateY(0) scale(1); } 50% { transform:translateY(-4px) scale(1.045); } }
+  @keyframes studyFlash { 0% { opacity:0; } 25% { opacity:1; } 100% { opacity:0; } }
+  @keyframes studyPop { from { transform:translateY(12px) scale(.95); opacity:0; } to { transform:translateY(0) scale(1); opacity:1; } }
+
+  @media (max-width: 420px) {
+    .study-target-grid { grid-template-columns: 1fr; }
+    .study-rank-row { grid-template-columns: 24px 26px minmax(0, 1fr) auto; padding: 9px 12px; }
+  }
+}

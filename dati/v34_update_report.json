@@ -1,0 +1,12 @@
+{
+  "version": "v34_moonlitt_inspired_layout",
+  "changes": [
+    "Redesign visuale ispirato a Moonlitt: sfondo notte/luna, orbite, pannelli glass, widget puliti.",
+    "Login reso più immersivo, con hero lunare full-screen e form glass laterale.",
+    "Scelta corsi trasformata in due grandi pannelli lunari con orbite e accenti corso.",
+    "Home corsi trasformata da percorso gamificato a dashboard di widget premium più ordinata.",
+    "Quiz, risultati, modali e admin riallineati allo stesso linguaggio visivo.",
+    "Aggiornato service worker a v34 per forzare cache nuova."
+  ],
+  "data_files_touched": false
+}

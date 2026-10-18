@@ -1,0 +1,13 @@
+{
+  "version": "v22_573_termini_fix",
+  "bagnino_questions_in_site": 573,
+  "actions": [
+    "Ripristinate tutte le 573 domande Assistenti Bagnanti Piscina.",
+    "Ripristinate le spiegazioni Bagnino fino alla domanda 573.",
+    "Aggiornati i testi Bagnino da 540 a 573.",
+    "Aggiunta Netlify Function accept-terms per accettare termini senza blocco Firestore lato client.",
+    "Aggiornate app.js e app_bagnino.js: richiesta account passa dalla Function server-side create-account-request anche dalle pagine corso.",
+    "Aggiornate regole Firestore fallback per consentire solo termini/noticesSeen all’utente, senza dare accesso ai corsi."
+  ],
+  "istruttore_data_files_touched": false
+}

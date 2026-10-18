@@ -1,0 +1,28 @@
+{
+  "version": "v29",
+  "change": "Aggiornamento banca dati Assistenti Bagnanti Piscina con file Opzioni Plausibili",
+  "source_files": [
+    "Quiz_Bagnino_Domande_Opzioni_Plausibili(1).xlsx",
+    "Quiz_Bagnino_Risposte_Opzioni_Plausibili(1).xlsx"
+  ],
+  "bagnino_questions_count": 573,
+  "bagnino_ids": "1-573",
+  "changed_options_vs_v28": 565,
+  "changed_correct_letters_vs_v28": 433,
+  "changed_question_text_vs_v28": 0,
+  "istruttore_data_files_untouched": [
+    "questions.js",
+    "questions.json",
+    "explanations.js"
+  ],
+  "hashes": {
+    "questions.js": "ce2dedfa6f219d589dcce7b6947db339a3aba713cf03c2adf162bef47da0b740",
+    "questions.json": "b98fcfcb963d8283ace4f4cd4447e24ed1722ca7bfd756857ea5de40e074867d",
+    "explanations.js": "e25531f63a61ced3f7c19fb3b47862daebfe5e6f5cbb44e2786a5b933843a176"
+  },
+  "updated_files": [
+    "bagnino_questions.js",
+    "bagnino_explanations.js",
+    "service-worker.js"
+  ]
+}

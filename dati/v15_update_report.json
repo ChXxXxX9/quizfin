@@ -1,0 +1,17 @@
+{
+  "version": "v15",
+  "changes": [
+    "Aggiunto pulsante Segna/Rimuovi direttamente nella schermata risultati di ogni quiz.",
+    "La sezione errori mostra ora gli ultimi 5 quiz completati con errori salvati, non solo i quiz misti.",
+    "Spiegami durante il quiz non mostra più la risposta corretta: mostra solo la spiegazione concettuale e il riferimento.",
+    "Rimosso il blocco 'Corretta:' dalle spiegazioni visualizzate; resta il contenuto concettuale del manuale e il riferimento.",
+    "Risposta corretta visibile solo dopo la risposta, nei risultati, nelle flashcard concluse e nelle domande segnate.",
+    "Badge ridisegnati con icone/stemmi, stato bloccato/sbloccato e popup di sblocco animato.",
+    "Nessuna funzione admin nuova aggiunta, come richiesto."
+  ],
+  "protected_files_not_modified": [
+    "questions.js",
+    "questions.json",
+    "explanations.js"
+  ]
+}

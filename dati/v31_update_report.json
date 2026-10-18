@@ -1,0 +1,11 @@
+{
+  "version": "v31",
+  "changes": [
+    "Login ridisegnato come pagina pubblica e più ampia",
+    "Logo reale usato nella hero della pagina login",
+    "Rimossi riferimenti pubblici ad admin/prova dalla pagina login",
+    "Card login estesa quasi a tutto schermo",
+    "Service worker aggiornato a v31"
+  ],
+  "dataFilesTouched": false
+}

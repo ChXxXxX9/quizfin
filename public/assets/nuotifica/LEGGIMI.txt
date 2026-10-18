@@ -1,0 +1,3 @@
+Materiale grafico di Nuotifica (https://nuotifica.web.app) usato per il banner e il popup promozionale.
+Logo e texture "caustiche" provengono dal repository di Nuotifica.
+Font Saira e Doto: SIL Open Font License 1.1 (vedi OFL-Saira.txt e OFL-Doto.txt).

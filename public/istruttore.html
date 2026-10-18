@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Istruttore di Nuoto · Quiz Nuoto</title>
+  <meta name="description" content="Allenamento all'esame del corso Istruttore di Nuoto: quiz misto, per argomento, esamone, flash card e videolezioni." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#f3f5f9" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Quiz Nuoto" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="preload" href="assets/fonts/adventor-bold.woff" as="font" type="font/woff" crossorigin />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="study-goal.css" />
+  <link rel="stylesheet" href="promo.css" />
+</head>
+<body class="course-istruttore has-nav app-locked" data-view="none">
+  <a class="skip-link" href="#mainContent">Vai al contenuto</a>
+
+  <nav class="tabbar" aria-label="Navigazione del corso">
+    <a class="rail-brand" href="index.html"><img src="icon-192.png" alt="" /><span>Quiz Nuoto<small>Istruttore di Nuoto</small></span></a>
+    <button id="homeBtn" class="tab" type="button" data-nav-view="homeView"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>Home</button>
+    <button class="tab" type="button" data-proxy="#showStatsBtn" data-nav-view="statsView"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11"/><path d="M12 20V4"/><path d="M19 20v-6"/></svg></span>Statistiche</button>
+    <a id="portalBtn" class="tab" href="index.html"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg></span>Corsi</a>
+    <button id="accountBtn" class="tab" type="button" aria-label="Account">👤</button>
+  </nav>
+
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="icon-btn appbar-back" href="index.html" aria-label="Tutti i corsi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></a>
+      <div class="appbar-title collapses"><small>Corso</small><strong>Istruttore di Nuoto</strong></div>
+      <div class="appbar-actions">
+        <button id="adminBellBtn" class="icon-btn notification-btn hidden" type="button" aria-label="Richieste in attesa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="adminPendingBadge" class="notification-badge">0</span></button>
+        <button id="adminBtn" class="icon-btn hidden" type="button" aria-label="Area admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></button>
+        <button id="installAppBtn" class="icon-btn" type="button" aria-label="Installa app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></button>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Cambia tema">☀︎</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <section class="auth-card hidden" id="authCard" aria-labelledby="authTitle">
+      <div class="auth-main">
+        <div>
+          <p class="eyebrow">Account</p>
+          <h2 id="authTitle">Accesso richiesto</h2>
+          <p id="authSubtitle">Accedi con l'account approvato dallo staff.</p>
+        </div>
+        <div id="authStatus" class="status-pill">Accesso</div>
+      </div>
+      <div class="auth-grid" id="authControls">
+        <input id="emailInput" type="email" placeholder="Email" autocomplete="email" aria-label="Email" />
+        <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" aria-label="Password" />
+        <button id="loginBtn" class="primary-btn" type="button">Accedi</button>
+        <button id="registerBtn" class="secondary-btn" type="button">Richiedi un account</button>
+        <button id="googleBtn" class="ghost-btn wide" type="button">Continua con Google</button>
+        <button id="forgotPasswordBtn" class="ghost-btn wide" type="button">Password dimenticata?</button>
+        <button id="resendVerificationBtn" class="secondary-btn wide hidden" type="button">Reinvia l'email di verifica</button>
+        <button id="logoutBtn" class="danger-btn wide hidden" type="button">Esci dall'account</button>
+      </div>
+      <p id="authMessage" class="message"></p>
+    </section>
+    <div class="boot" role="status"><div class="dial" aria-hidden="true"><span class="dial-major"></span></div><span>Verifica dell'accesso…</span></div>
+
+    <main id="mainContent">
+      <!-- ============ HOME ============ -->
+      <section id="homeView" class="view active" aria-labelledby="homeTitle">
+        <header class="home-head">
+          <p class="kicker">Corso · allenamento all'esame</p>
+          <h1 id="homeTitle">Istruttore di Nuoto</h1>
+        </header>
+
+        <div class="home-top">
+          <section class="hero" aria-labelledby="heroTitle">
+            <div class="dial" data-dial-source="#mixedMiniText" role="img" aria-label="Avanzamento del quiz misto">
+              <span class="dial-major"></span>
+              <span class="dial-hand"></span>
+              <span class="dial-value"><strong data-dial-value>—</strong><small>completato</small></span>
+            </div>
+            <div class="hero-body">
+              <p class="hero-kicker">Riprendi da qui</p>
+              <h2 id="heroTitle">Quiz misto</h2>
+              <p class="hero-meta"><span id="mixedMiniText">0 / 1000</span> domande · 20 a sessione</p>
+              <div class="mini-progress" hidden><span id="mixedMiniBar"></span></div>
+              <button id="startMixedBtn" class="hero-cta" type="button">Avvia il quiz misto <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button>
+            </div>
+          </section>
+          <div id="studyGoalSlot"></div>
+        </div>
+
+        <div id="announcementsPanel" class="hidden"></div>
+
+        <section class="section" aria-labelledby="secTrain">
+          <div class="section-head"><h2 id="secTrain">Allenati</h2></div>
+          <div class="tiles"><div class="tile-grid">
+            <div class="tile is-wide">
+              <div class="tile-head">
+                <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg></span>
+                <div><p class="tile-title">Quiz per argomento</p><p class="tile-desc">7 domande diverse a sessione sull'argomento scelto.</p></div>
+              </div>
+              <div class="tile-controls">
+                <select id="topicSelect" aria-label="Argomento"></select>
+                <button id="startTopicBtn" class="primary-btn" type="button">Avvia</button>
+                <div class="tile-progress"><div class="mini-progress"><span id="topicMiniBar"></span></div><span class="progress-label" id="topicMiniText">0 / 0</span></div>
+              </div>
+            </div>
+
+            <button id="startWrongMixedBtn" class="tile" type="button">
+              <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
+              <svg class="tile-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              <span class="tile-title">Errori del misto</span>
+              <span class="tile-desc">Se rispondi bene, la domanda esce dall'elenco.</span>
+            </button>
+
+            <button id="startWrongTopicBtn" class="tile" type="button">
+              <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span>
+              <svg class="tile-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              <span class="tile-title">Errori per argomento</span>
+              <span class="tile-desc">Solo l'argomento selezionato qui sopra.</span>
+            </button>
+
+            <button id="startFlashcardsBtn" class="tile" type="button">
+              <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+              <svg class="tile-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              <span class="tile-title">Flash card</span>
+              <span class="tile-meta" id="flashStatsText">0 flash card fatte</span>
+            </button>
+
+            <button id="startMarkedBtn" class="tile" type="button">
+              <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg></span>
+              <svg class="tile-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              <span class="tile-title">Domande segnate</span>
+              <span class="tile-meta" id="markedCountText">0 domande segnate</span>
+            </button>
+          </div></div>
+        </section>
+
+        <section class="section" aria-labelledby="secExam">
+          <div class="section-head"><h2 id="secExam">Esame e studio</h2></div>
+          <div class="tiles"><div class="tile-grid pair">
+            <div id="examoneCard" class="tile is-wide examone-card locked">
+              <div class="tile-head">
+                <span class="tile-ico">
+                  <svg class="ico-locked" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="3"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                  <svg class="ico-unlocked" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg>
+                </span>
+                <div><p class="tile-title">Esamone finale</p><p class="tile-desc">50 domande in 20 minuti, soglia 40/50.</p></div>
+              </div>
+              <p id="examoneLockText" class="tile-status">Bloccato</p>
+              <p id="examoneStatusText" class="tile-status">Primo tentativo ufficiale non ancora svolto.</p>
+              <button id="startExamoneBtn" class="primary-btn" type="button" disabled>Avvia l'esamone</button>
+            </div>
+
+            <button id="openFadBtn" class="tile is-wide" type="button">
+              <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></svg></span>
+              <svg class="tile-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              <span class="tile-title">FAD · videolezioni</span>
+              <span class="tile-desc">Segna i video visti e segui il ritmo di studio che scegli.</span>
+              <span class="tile-meta" id="fadHomeSummary">Apri per impostare il tuo obiettivo di studio.</span>
+            </button>
+          </div></div>
+        </section>
+
+        <section class="section numbers" aria-labelledby="secNumbers">
+          <div class="section-head"><h2 id="secNumbers">I tuoi numeri</h2></div>
+          <div id="heroStats"></div>
+          <button id="showStatsBtn" class="secondary-btn stats-hero-btn" type="button">Apri la scheda tecnica completa</button>
+        </section>
+      </section>
+
+      <!-- ============ QUIZ ============ -->
+      <section id="quizView" class="view" aria-labelledby="quizProgressTitle">
+        <div class="focus-wrap">
+          <div class="focus-head">
+            <button id="exitQuizBtn" class="icon-btn bordered" type="button" aria-label="Esci dal quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            <div class="focus-meta">
+              <p class="eyebrow" id="quizModeLabel">Quiz</p>
+              <h2 id="quizProgressTitle">Domanda 1</h2>
+            </div>
+            <div class="quiz-pills">
+              <div id="quizTimer" class="status-pill hidden">00:00</div>
+              <div id="questionCounter" class="status-pill">1 / 7</div>
+            </div>
+          </div>
+          <div class="progress-track"><span id="sessionProgressBar"></span></div>
+
+          <article class="question-card">
+            <div class="question-tools">
+              <div class="question-topic" id="questionTopic">Argomento</div>
+              <div class="tool-actions">
+                <button id="explainBtn" class="secondary-btn small-btn" type="button">📘 Spiegami</button>
+                <button id="hintBtn" class="secondary-btn small-btn" type="button">💡 Suggerimento</button>
+                <button id="markQuestionBtn" class="secondary-btn small-btn" type="button">☆ Segna</button>
+              </div>
+            </div>
+            <h2 id="questionText">Domanda</h2>
+            <div id="optionsList" class="options-list"></div>
+          </article>
+
+          <div class="quiz-actions">
+            <button id="prevQuestionBtn" class="ghost-btn" type="button">Indietro</button>
+            <button id="nextQuestionBtn" class="primary-btn" type="button" disabled>Avanti</button>
+          </div>
+          <p class="kbd-hint">Tastiera: <kbd>A</kbd>–<kbd>D</kbd> rispondi · <kbd>Invio</kbd> avanti · <kbd>←</kbd> indietro · <kbd>S</kbd> segna · <kbd>Esc</kbd> chiudi</p>
+        </div>
+      </section>
+
+      <!-- ============ FLASH CARD ============ -->
+      <section id="flashcardView" class="view" aria-labelledby="flashcardProgressTitle">
+        <div class="focus-wrap">
+          <div class="focus-head">
+            <button id="exitFlashcardsBtn" class="icon-btn bordered" type="button" aria-label="Esci dalle flash card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            <div class="focus-meta">
+              <p class="eyebrow">Flash card</p>
+              <h2 id="flashcardProgressTitle">Allenamento infinito</h2>
+            </div>
+            <div class="quiz-pills"><div id="flashcardCounter" class="status-pill">0 fatte</div></div>
+          </div>
+
+          <article class="question-card flashcard-card">
+            <div class="question-tools">
+              <div class="question-topic" id="flashcardTopic">Argomento</div>
+              <div class="tool-actions">
+                <button id="flashcardExplainBtn" class="secondary-btn small-btn hidden" type="button">📘 Spiegami</button>
+                <button id="flashcardMarkBtn" class="secondary-btn small-btn" type="button">☆ Segna</button>
+              </div>
+            </div>
+            <h2 id="flashcardQuestion">Domanda</h2>
+            <div id="flashcardOptions" class="options-list two-options"></div>
+            <div id="flashcardFeedback" class="flashcard-feedback hidden"></div>
+            <div class="quiz-actions flashcard-actions">
+              <button id="flashcardNextBtn" class="primary-btn hidden" type="button">Prossima flash card</button>
+            </div>
+          </article>
+          <p class="kbd-hint">Tastiera: <kbd>1</kbd> <kbd>2</kbd> rispondi · <kbd>Invio</kbd> prossima</p>
+        </div>
+      </section>
+
+      <!-- ============ SEGNATE ============ -->
+      <section id="markedView" class="view" aria-labelledby="markedTitle">
+        <div class="view-head">
+          <button id="backHomeFromMarkedBtn" class="icon-btn bordered" type="button" aria-label="Torna alla home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+          <div>
+            <p class="eyebrow">Domande segnate</p>
+            <h2 id="markedTitle">Ripasso salvato</h2>
+          </div>
+        </div>
+        <p class="message" style="margin:-6px 0 16px;">Le domande che hai segnato, con risposta corretta e spiegazione.</p>
+        <div id="markedList" class="marked-list"></div>
+      </section>
+
+      <!-- ============ RISULTATO ============ -->
+      <section id="resultsView" class="view" aria-labelledby="resultTitle">
+        <div class="result-card">
+          <p class="eyebrow">Risultato</p>
+          <h2 id="resultTitle">Quiz completato</h2>
+          <div class="score-ring" id="scoreRing">0</div>
+          <p id="resultSummary"></p>
+          <div id="mixedWeakPanel" class="inline-panel hidden"></div>
+          <div class="result-actions">
+            <button id="retryMistakesBtn" class="secondary-btn" type="button">Ripeti gli errori</button>
+            <button id="backHomeFromResultsBtn" class="primary-btn" type="button">Torna alla home</button>
+          </div>
+        </div>
+        <div id="answersReview" class="answers-review"></div>
+      </section>
+
+      <!-- ============ STATISTICHE ============ -->
+      <section id="statsView" class="view" aria-labelledby="statsTitle">
+        <div class="view-head">
+          <button id="backHomeFromStatsBtn" class="icon-btn bordered" type="button" aria-label="Torna alla home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+          <div>
+            <p class="eyebrow">Scheda tecnica</p>
+            <h2 id="statsTitle">Statistiche personali</h2>
+          </div>
+        </div>
+
+        <div class="stats-wrap"><div id="statsGrid" class="stats-grid"></div></div>
+
+        <div class="stats-panels">
+          <div class="panel">
+            <h3>Progressi per argomento</h3>
+            <div id="topicProgressList" class="topic-progress-list"></div>
+          </div>
+          <div class="panel">
+            <h3>Andamento dei voti</h3>
+            <div id="scoreTrendList" class="score-trend-list"></div>
+            <h3 style="margin-top:22px;">Storico ultimi quiz</h3>
+            <div id="historyList" class="history-list"></div>
+          </div>
+          <div class="panel span-all">
+            <h3>Tutte le 1000 domande</h3>
+            <p class="message">Spunta verde: domanda incontrata almeno una volta nei quiz o nelle flash card.</p>
+            <div id="allQuestionsProgressList" class="all-questions-progress-list"></div>
+          </div>
+          <div class="panel">
+            <h3>Errori degli ultimi 5 quiz</h3>
+            <p class="message">Per ogni quiz è evidenziato l'argomento con più errori.</p>
+            <div id="recentErrorsList" class="recent-errors-list"></div>
+          </div>
+          <div class="panel">
+            <h3>Badge</h3>
+            <div id="badgeList" class="badge-list"></div>
+          </div>
+          <div class="panel danger-zone span-all">
+            <h3>Gestione dati</h3>
+            <p class="message">Questi comandi non cancellano le domande: modificano solo i tuoi progressi e le tue statistiche.</p>
+            <div class="split-buttons" style="margin-top:14px;">
+              <button id="resetMixedProgressBtn" class="ghost-btn" type="button">Reset progressi misto</button>
+              <button id="resetTopicProgressBtn" class="ghost-btn" type="button">Reset argomento selezionato</button>
+              <button id="resetAllDataBtn" class="danger-btn" type="button">Azzera tutto</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ FAD ============ -->
+      <section id="fadView" class="view" aria-labelledby="fadTitle">
+        <div class="view-head">
+          <button id="backHomeFromFadBtn" class="icon-btn bordered" type="button" aria-label="Torna alla home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+          <div>
+            <p class="eyebrow">Formazione a distanza</p>
+            <h2 id="fadTitle">FAD · videolezioni</h2>
+          </div>
+        </div>
+
+        <section class="panel fad-summary">
+          <div>
+            <h3 id="fadHeroTitle">Il tuo percorso FAD</h3>
+            <p id="fadHeroCopy">Caricamento…</p>
+          </div>
+          <div class="stat-tiles"><div>
+            <div class="hero-stat"><strong id="fadStatWatched">0</strong><span>Video visti</span></div>
+            <div class="hero-stat"><strong id="fadStatTotal">0</strong><span>Video totali</span></div>
+            <div class="hero-stat"><strong id="fadStatMinutesLeft">0 min</strong><span>Minuti restanti</span></div>
+            <div class="hero-stat"><strong id="fadStatPace">—</strong><span>Ritmo consigliato</span></div>
+          </div></div>
+          <button id="fadGoalBtn" class="primary-btn" type="button">Imposta l'obiettivo</button>
+        </section>
+
+        <div class="panel">
+          <h3>Catalogo video</h3>
+          <p id="fadEmptyMessage" class="fad-empty-message hidden">Nessun video disponibile al momento.</p>
+          <div id="fadVideoListEl" class="history-list"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ============ FINESTRE ============ -->
+  <div id="fadGoalModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="fadGoalModalTitle">
+    <div class="modal-card">
+      <p class="eyebrow">FAD</p>
+      <h2 id="fadGoalModalTitle">Imposta il tuo obiettivo</h2>
+      <p>Un ritmo fisso al giorno, oppure una data entro cui finire tutti i video.</p>
+      <label class="checkline"><input type="radio" name="fadGoalMode" id="fadGoalModeDaily" checked /> Minuti al giorno</label>
+      <input id="fadGoalDailyInput" type="number" min="1" max="600" step="1" placeholder="Es. 15" aria-label="Minuti al giorno" />
+      <label class="checkline"><input type="radio" name="fadGoalMode" id="fadGoalModeDeadline" /> Finire entro una data</label>
+      <input id="fadGoalDeadlineInput" type="date" aria-label="Data di scadenza" />
+      <div class="split-buttons">
+        <button id="fadGoalCancelBtn" class="ghost-btn" type="button">Annulla</button>
+        <button id="fadGoalSaveBtn" class="primary-btn" type="button">Salva obiettivo</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="timerModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="timerModeLabel">
+    <div class="modal-card">
+      <p class="eyebrow">Timer opzionale</p>
+      <h2 id="timerModeLabel">Imposta il timer</h2>
+      <p>Allo scadere il quiz si chiude e le risposte mancanti valgono come errate.</p>
+      <div class="timer-grid">
+        <button id="timerNoBtn" class="primary-btn wide" type="button">Senza timer</button>
+        <button id="timer10Btn" class="secondary-btn" type="button">10 min</button>
+        <button id="timer20Btn" class="secondary-btn" type="button">20 min</button>
+        <button id="timer30Btn" class="secondary-btn" type="button">30 min</button>
+      </div>
+      <div class="custom-timer">
+        <input id="timerCustomInput" type="number" min="1" max="240" placeholder="Minuti personalizzati" aria-label="Minuti personalizzati" />
+        <button id="timerCustomBtn" class="secondary-btn" type="button">Usa</button>
+      </div>
+      <button id="timerCancelBtn" class="ghost-btn" type="button">Annulla</button>
+    </div>
+  </div>
+
+  <div id="installModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+    <div class="modal-card">
+      <p class="eyebrow">App</p>
+      <h2 id="installTitle">Installa Quiz Nuoto</h2>
+      <p id="installText">Aggiungi il sito alla schermata Home e usalo come una vera app.</p>
+      <div class="install-steps">
+        <p><strong>iPhone/iPad:</strong> apri il sito in Safari → Condividi → Aggiungi alla schermata Home.</p>
+        <p><strong>Android:</strong> apri il sito in Chrome → menu ⋮ → Installa app.</p>
+      </div>
+      <div class="split-buttons">
+        <button id="installCloseBtn" class="ghost-btn" type="button">Chiudi</button>
+        <button id="installPromptBtn" class="primary-btn hidden" type="button">Installa ora</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="explanationModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="explanationTitle">
+    <div class="modal-card explanation-card">
+      <p class="eyebrow">Spiegazione</p>
+      <h2 id="explanationTitle">Spiegami la domanda</h2>
+      <div id="explanationContent" class="explanation-content"></div>
+      <button id="explanationCloseBtn" class="primary-btn" type="button">Chiudi</button>
+    </div>
+  </div>
+
+  <div id="accountRequestModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="accountRequestTitle">
+    <div class="modal-card account-request-card">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Accesso riservato</p>
+          <h3 id="accountRequestTitle">Richiesta account</h3>
+          <p class="message">Scegli email, password e corso. Lo staff approverà uno o più accessi. Non viene inviata nessuna password provvisoria.</p>
+        </div>
+        <button id="accountRequestCloseBtn" class="icon-btn" type="button" aria-label="Chiudi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="admin-form">
+        <label for="requestFirstName">Nome</label>
+        <input id="requestFirstName" type="text" placeholder="Nome" autocomplete="given-name" />
+        <label for="requestLastName">Cognome</label>
+        <input id="requestLastName" type="text" placeholder="Cognome" autocomplete="family-name" />
+        <label for="requestEmail">Email</label>
+        <input id="requestEmail" type="email" placeholder="email@esempio.it" autocomplete="email" />
+        <label for="requestPassword">Password</label>
+        <input id="requestPassword" type="password" placeholder="Scegli una password" autocomplete="new-password" />
+        <label for="requestPasswordConfirm">Conferma password</label>
+        <input id="requestPasswordConfirm" type="password" placeholder="Ripeti la password" autocomplete="new-password" />
+        <label>Corso richiesto</label>
+        <div class="course-checkboxes">
+          <label class="checkline"><input id="requestCourseIstruttore" type="checkbox" checked /> Istruttore di Nuoto</label>
+          <label class="checkline"><input id="requestCourseBagnino" type="checkbox" /> Assistenti Bagnanti Piscina</label>
+        </div>
+        <label for="requestMessage">Messaggio opzionale</label>
+        <textarea id="requestMessage" rows="3" placeholder="Note per lo staff"></textarea>
+        <button id="submitAccountRequestBtn" class="primary-btn" type="button">Invia richiesta</button>
+        <p id="accountRequestMessage" class="message"></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="termsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+    <div class="modal-card account-request-card">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Primo accesso</p>
+          <h3 id="termsTitle">Accettazione obbligatoria</h3>
+        </div>
+      </div>
+      <div class="system-notice">
+        <p>Per continuare devi accettare le condizioni d'uso e il trattamento dei dati necessari al funzionamento del quiz.</p>
+        <p><strong>Nota:</strong> il sito è uno strumento di studio e simulazione. Non garantisce il superamento dell'esame ufficiale.</p>
+      </div>
+      <label class="checkline"><input id="termsAcceptCheck" type="checkbox" /> Accetto termini, privacy e disclaimer.</label>
+      <div class="result-actions">
+        <button id="termsLogoutBtn" class="ghost-btn" type="button">Esci</button>
+        <button id="acceptTermsBtn" class="primary-btn" type="button">Accetta e continua</button>
+      </div>
+      <p id="termsMessage" class="message"></p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <!-- Firebase compat: zero build, adatto a hosting statico gratuito. -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="account-actions.js"></script>
+  <script src="study-goal.js"></script>
+  <script src="fad.js"></script>
+  <script src="questions.js"></script>
+  <script src="explanations.js"></script>
+  <script src="app.js"></script>
+  <script src="shell.js"></script>
+  <script src="promo.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

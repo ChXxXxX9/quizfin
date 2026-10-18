@@ -1,0 +1,110 @@
+name: Pubblica Quiz Nuoto
+
+# A ogni modifica del sito (cartella public) o delle regole:
+# 1) prova le regole di Firestore con l'emulatore (nessun dato vero coinvolto);
+# 2) se vanno, pubblica il sito su https://quiznuoto.web.app e aggiorna le regole.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'firebase.json'
+      - 'firestore.rules'
+      - 'test-regole/**'
+      - '.github/workflows/pubblica.yml'
+  # Sulle pull request girano solo le prove (nessuna pubblicazione)
+  pull_request:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'firebase.json'
+      - 'firestore.rules'
+      - 'test-regole/**'
+      - '.github/workflows/pubblica.yml'
+  workflow_dispatch:
+    inputs:
+      salta_prove:
+        description: 'Pubblica anche se le prove delle regole non passano (solo in emergenza)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pubblica-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-regole:
+    name: Prova le regole Firestore
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Installa gli strumenti di prova
+        run: npm install --prefix test-regole --no-audit --no-fund
+
+      - name: Prove con l'emulatore
+        run: |
+          npx --yes firebase-tools@latest emulators:exec --only firestore \
+            --project demo-quiz-nuoto "npm --prefix test-regole test"
+
+  pubblica:
+    name: Pubblica sito e regole
+    needs: prove-regole
+    if: ${{ always() && github.event_name != 'pull_request' && (needs.prove-regole.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.salta_prove)) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Credenziali Firebase
+        env:
+          ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$ACCOUNT" ]; then
+            echo "::error::Manca il secret FIREBASE_SERVICE_ACCOUNT (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          printf '%s' "$ACCOUNT" > "$RUNNER_TEMP/account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/account.json" >> "$GITHUB_ENV"
+          echo "PROGETTO=$(node -p "require(process.env.RUNNER_TEMP + '/account.json').project_id")" >> "$GITHUB_ENV"
+
+      - name: Crea il sito quiznuoto se non esiste ancora
+        run: |
+          if npx --yes firebase-tools@latest hosting:sites:get quiznuoto --project "$PROGETTO" > /dev/null 2>&1; then
+            echo "Il sito quiznuoto esiste già."
+          else
+            npx --yes firebase-tools@latest hosting:sites:create quiznuoto --project "$PROGETTO" --non-interactive \
+              || { echo "::error::Non riesco a creare il sito quiznuoto: forse il nome è già usato da un altro progetto. Crealo dalla console (Hosting → Aggiungi un altro sito) o scegli un altro nome in firebase.json."; exit 1; }
+          fi
+
+      - name: Pubblica sito e regole
+        run: |
+          set -o pipefail
+          if ! npx --yes firebase-tools@latest deploy --only hosting,firestore:rules \
+               --project "$PROGETTO" --non-interactive --force 2>&1 | tee "$RUNNER_TEMP/deploy.log"; then
+            msg=$(grep -v '^\s*$' "$RUNNER_TEMP/deploy.log" | tail -n 25 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=Pubblicazione::$msg"
+            exit 1
+          fi
+          echo "### Pubblicato su https://quiznuoto.web.app" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Pulizia
+        if: ${{ always() }}
+        run: rm -f "$RUNNER_TEMP/account.json"
