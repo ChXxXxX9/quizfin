@@ -274,3 +274,46 @@ test('impostazioni (manutenzione, promo Nuotifica): leggono tutti, scrive solo l
   const adminDb = session('admin1', { email: 'admin1@esempio.it', emailVerified: true });
   await assertSucceeds(adminDb.doc('courseSettings/promo').set({ bannerEnabled: true, popupVersion: 2 }, { merge: true }));
 });
+
+/* ---------- Annunci, conferme "OK" e notifiche ---------- */
+test('annunci: l\'admin pubblica, l\'utente legge solo quelli attivi e suoi, e conferma solo per sé', async () => {
+  const adminDb = session('admin1', { email: 'admin1@esempio.it', emailVerified: true });
+  const base = { version: 2, body: '**Ciao**', message: 'Ciao', display: 'popup', tone: 'info', requireAck: true, frequency: 'once', createdAt: FV.serverTimestamp() };
+  await assertSucceeds(adminDb.doc('announcements/a1').set({ ...base, title: 'Per tutti', scope: 'global', active: true }));
+  await assertSucceeds(adminDb.doc('announcements/a2').set({ ...base, title: 'Solo Anna', scope: 'user', targetUid: 'approvato', active: true }));
+  await assertSucceeds(adminDb.doc('announcements/a3').set({ ...base, title: 'Bozza', scope: 'global', active: false }));
+
+  const db = session('approvato', { emailVerified: true });
+  await assertFails(db.doc('announcements/a1').set({ title: 'x' }, { merge: true }));
+  const glob = await assertSucceeds(db.collection('announcements').where('active', '==', true).where('scope', '==', 'global').get());
+  assert.deepEqual(glob.docs.map((d) => d.id), ['a1']);
+  const mine = await assertSucceeds(db.collection('announcements').where('active', '==', true).where('scope', '==', 'user').where('targetUid', '==', 'approvato').get());
+  assert.deepEqual(mine.docs.map((d) => d.id), ['a2']);
+  await assertFails(db.doc('announcements/a3').get());
+
+  await assertSucceeds(db.doc('announcements/a1/acks/approvato').set({ uid: 'approvato', name: 'Anna Rossi', rev: 0, at: FV.serverTimestamp() }));
+  await assertSucceeds(db.doc('announcements/a1/acks/approvato').get());
+  await assertFails(db.doc('announcements/a1/acks/admin1').set({ uid: 'admin1', name: 'finto', at: FV.serverTimestamp() }));
+  await assertFails(db.doc('announcements/a1/acks/approvato').set({ uid: 'approvato', at: FV.serverTimestamp(), extra: true }));
+  await assertFails(db.doc('announcements/a1/acks/admin1').get());
+
+  const adminAgain = session('admin1', { email: 'admin1@esempio.it', emailVerified: true });
+  const acks = await assertSucceeds(adminAgain.collection('announcements/a1/acks').get());
+  assert.equal(acks.size, 1);
+});
+
+test('notifiche: l\'utente salva i suoi dispositivi, la coda di invio è solo dell\'admin', async () => {
+  const db = session('approvato', { emailVerified: true });
+  await assertSucceeds(db.doc('users/approvato').set({ push: { tokens: FV.arrayUnion('tok-1'), enabled: true, streak: true, updatedAt: FV.serverTimestamp() } }, { merge: true }));
+  await assertSucceeds(db.doc('users/approvato').set({ push: { tokens: FV.arrayRemove('tok-1'), enabled: false } }, { merge: true }));
+  await assertFails(db.doc('users/approvato').set({ push: { tokens: ['x'] }, access: { appVerified: true, courseAccess: { bagnino: true } } }, { merge: true }));
+  await assertFails(db.collection('pushQueue').add({ title: 'Spam', body: 'x', status: 'pending', target: { type: 'all' } }));
+  await assertFails(db.collection('pushQueue').get());
+  await assertFails(db.doc('meta/promemoria').get());
+
+  const adminDb = session('admin1', { email: 'admin1@esempio.it', emailVerified: true });
+  const ref = await assertSucceeds(adminDb.collection('pushQueue').add({ title: 'Ciao', body: 'Prova', url: 'index.html', target: { type: 'all' }, status: 'pending', createdAt: FV.serverTimestamp(), createdBy: 'admin1' }));
+  await assertSucceeds(adminDb.collection('pushQueue').get());
+  await assertSucceeds(ref.delete());
+  await assertSucceeds(adminDb.doc('courseSettings/notifiche').set({ streakReminders: true, hours: [18, 21] }, { merge: true }));
+});

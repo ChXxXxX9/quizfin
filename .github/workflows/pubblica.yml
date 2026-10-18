@@ -1,7 +1,7 @@
 name: Pubblica Quiz Nuoto
 
-# A ogni modifica del sito (cartella public) o delle regole:
-# 1) prova le regole di Firestore con l'emulatore (nessun dato vero coinvolto);
+# A ogni modifica del sito (cartella public), delle regole o delle notifiche:
+# 1) prova le regole di Firestore con l'emulatore (nessun dato vero coinvolto) e la logica delle notifiche;
 # 2) se vanno, pubblica il sito su https://quiznuoto.web.app e aggiorna le regole.
 on:
   push:
@@ -11,6 +11,7 @@ on:
       - 'firebase.json'
       - 'firestore.rules'
       - 'test-regole/**'
+      - 'notifiche/**'
       - '.github/workflows/pubblica.yml'
   # Sulle pull request girano solo le prove (nessuna pubblicazione)
   pull_request:
@@ -20,6 +21,7 @@ on:
       - 'firebase.json'
       - 'firestore.rules'
       - 'test-regole/**'
+      - 'notifiche/**'
       - '.github/workflows/pubblica.yml'
   workflow_dispatch:
     inputs:
@@ -54,6 +56,9 @@ jobs:
 
       - name: Installa gli strumenti di prova
         run: npm install --prefix test-regole --no-audit --no-fund
+
+      - name: Prove del lavoro Notifiche
+        run: npm --prefix notifiche test
 
       - name: Prove con l'emulatore
         run: |

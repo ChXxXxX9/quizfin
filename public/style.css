@@ -16,17 +16,14 @@
      a schermo pieno durante quiz, flash card e sudoku.
    - Componenti che si adattano al proprio contenitore (container queries),
      tipografia fluida, aree sicure dei telefoni, movimento ridotto.
-   - Caratteri: TeX Gyre Adventor per l'interfaccia, TeX Gyre Schola
-     (scolastico) per il testo delle domande. Licenza in assets/fonts.
+   - Carattere: TeX Gyre Adventor per tutto (interfaccia, domande e spiegazioni).
+     Licenza in assets/fonts.
    ========================================================================== */
 
 @layer reset, tokens, base, shell, components, views, utilities;
 
 @font-face { font-family: 'Adventor'; src: url('assets/fonts/adventor-regular.woff') format('woff'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Adventor'; src: url('assets/fonts/adventor-bold.woff') format('woff'); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Schola'; src: url('assets/fonts/schola-regular.woff') format('woff'); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Schola'; src: url('assets/fonts/schola-bold.woff') format('woff'); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Schola'; src: url('assets/fonts/schola-italic.woff') format('woff'); font-weight: 400; font-style: italic; font-display: swap; }
 
 /* ======================================================================== */
 @layer reset {
@@ -75,7 +72,8 @@
 
     /* Tipografia */
     --font-ui: 'Adventor', 'Century Gothic', 'Avenir Next', 'Futura', system-ui, sans-serif;
-    --font-read: 'Schola', 'Century Schoolbook', 'New Century Schoolbook', Georgia, serif;
+    /* Un solo carattere per tutto il sito: anche domande e spiegazioni usano quello dell'interfaccia */
+    --font-read: var(--font-ui);
     --step--2: clamp(0.70rem, 0.69rem + 0.05vw, 0.74rem);
     --step--1: clamp(0.80rem, 0.78rem + 0.10vw, 0.86rem);
     --step-0: clamp(0.94rem, 0.91rem + 0.15vw, 1.00rem);
@@ -1212,10 +1210,10 @@
   .tool-actions .small-btn { padding: 0 12px; }
   #questionText, #flashcardQuestion {
     font-family: var(--font-read);
-    font-size: clamp(1.24rem, 1.05rem + 0.9vw, 1.62rem);
+    font-size: var(--step-2);
     font-weight: 700;
-    line-height: 1.32;
-    letter-spacing: -0.005em;
+    line-height: 1.3;
+    letter-spacing: -0.012em;
     margin-bottom: 18px;
     text-wrap: pretty;
   }
@@ -1232,8 +1230,8 @@
     background: var(--surface);
     text-align: left;
     font-family: var(--font-read);
-    font-size: clamp(1.02rem, 0.98rem + 0.2vw, 1.1rem);
-    line-height: 1.38;
+    font-size: var(--step-0);
+    line-height: 1.45;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition: border-color .15s, background .15s, transform .12s var(--ease);
@@ -1285,7 +1283,7 @@
   @keyframes dealIn { from { opacity: 0; transform: translateX(16px) rotate(.6deg); } to { opacity: 1; transform: none; } }
 
   .explanation-correct { margin-bottom: 12px; padding: 12px 14px; border-radius: var(--r-m); background: var(--ok-soft); color: var(--ok); font-weight: 700; }
-  .explanation-main p { font-family: var(--font-read); font-size: 1.04rem; line-height: 1.6; }
+  .explanation-main p { font-family: var(--font-read); font-size: var(--step-0); line-height: 1.6; }
   .manual-ref { margin-top: 12px; font-size: var(--step--2); color: var(--ink-2); }
   .explanation-content { margin: 12px 0 18px; }
 
@@ -1358,7 +1356,7 @@
   .review-item.correct::before { background: var(--ok); }
   .review-item.wrong::before { background: var(--danger); }
   .review-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
-  .review-top h4 { font-family: var(--font-read); font-size: 1.05rem; line-height: 1.4; }
+  .review-top h4 { font-family: var(--font-read); font-size: var(--step-0); line-height: 1.4; }
   .review-badge { flex-shrink: 0; padding: 3px 10px; border-radius: var(--r-pill); font-size: var(--step--2); font-weight: 700; }
   .review-badge.ok { background: var(--ok-soft); color: var(--ok); }
   .review-badge.no { background: var(--danger-soft); color: var(--danger); }
@@ -1394,7 +1392,7 @@
   @media (min-width: 640px) { .all-questions-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
   .question-check { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: var(--r-s); background: var(--surface-2); font-size: var(--step--2); }
   .question-check.done { background: var(--ok-soft); }
-  .question-check p { margin: 3px 0 8px; color: var(--ink-2); font-family: var(--font-read); font-size: .92rem; }
+  .question-check p { margin: 3px 0 8px; color: var(--ink-2); font-family: var(--font-read); font-size: var(--step--1); }
   .check-dot { display: grid; place-items: center; width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; border: 1.5px solid var(--line-2); background: var(--surface); color: var(--ok); font-size: .72rem; }
   .question-check.done .check-dot { border-color: var(--ok); }
   .score-trend-list { display: grid; gap: 8px; }
@@ -1454,7 +1452,7 @@
   /* Domande segnate */
   .marked-list { display: grid; gap: 12px; }
   .marked-item { padding: 18px; border-radius: var(--r-l); background: var(--surface); border: 1px solid var(--line); }
-  .marked-item h3 { margin: 10px 0; font-family: var(--font-read); font-size: 1.12rem; line-height: 1.4; }
+  .marked-item h3 { margin: 10px 0; font-family: var(--font-read); font-size: var(--step-1); line-height: 1.35; }
   .marked-answer { margin-bottom: 8px; font-size: var(--step--1); }
   .marked-item .review-top strong { font-size: var(--step--1); color: var(--brand-ink); }
 
@@ -1673,4 +1671,92 @@
 }
 @layer views {
   .portal-streak:has(.study-goal-widget:not(.hidden)) { margin-bottom: 18px; }
+}
+
+/* ---------- Manutenzione / blocco (gate.js): schermata a sé, senza stato account ---------- */
+@layer views {
+  .system-gate { display: none; }
+  body.system-gated .system-gate {
+    display: grid;
+    place-items: center;
+    min-height: calc(100dvh - 140px);
+    padding: 10px 0 40px;
+  }
+  body.system-gated :is(#authCard, .boot, #mainContent, #arteMain, #authGate, .tabbar, .appbar-back) { display: none !important; }
+  body.system-gated.has-nav { --rail-w: 0px !important; padding-left: 0 !important; }
+  .system-gate-card {
+    width: min(100%, 520px);
+    padding: clamp(26px, 6vw, 40px);
+    border-radius: var(--r-l);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    text-align: center;
+    animation: viewIn .3s var(--ease);
+  }
+  .system-gate-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: var(--warn-soft);
+    color: var(--warn);
+  }
+  .system-gate[data-kind="blocked"] .system-gate-icon { background: var(--danger-soft); color: var(--danger); }
+  .system-gate-icon svg { width: 36px; height: 36px; }
+  .system-gate[data-kind="maintenance"] .system-gate-icon svg { animation: gateWrench 2.8s var(--ease) infinite; transform-origin: 70% 30%; }
+  @keyframes gateWrench { 0%, 70%, 100% { transform: rotate(0); } 78% { transform: rotate(-18deg); } 86% { transform: rotate(12deg); } 93% { transform: rotate(-6deg); } }
+  .system-gate-eyebrow { margin: 18px 0 6px; font-size: var(--step--1); font-weight: 700; color: var(--warn); text-transform: uppercase; letter-spacing: .06em; }
+  .system-gate[data-kind="blocked"] .system-gate-eyebrow { color: var(--danger); }
+  .system-gate-title { font-size: var(--step-3); line-height: 1.08; letter-spacing: -0.02em; }
+  .system-gate-text { margin: 12px auto 0; max-width: 40ch; color: var(--ink-2); line-height: 1.55; }
+  .system-gate-reason {
+    margin: 20px 0 0;
+    padding: 14px 16px;
+    border-radius: var(--r-m);
+    background: var(--surface-2);
+    border-left: 4px solid var(--warn);
+    text-align: left;
+  }
+  .system-gate[data-kind="blocked"] .system-gate-reason { border-left-color: var(--danger); }
+  .system-gate-reason strong { display: block; font-size: var(--step--2); color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; }
+  .system-gate-reason p { margin-top: 4px; line-height: 1.5; white-space: pre-line; }
+  .system-gate-actions { display: grid; gap: 10px; margin-top: 24px; }
+  .system-gate-actions > * { width: 100%; }
+}
+
+/* ---------- Riquadro notifiche (push.js) ---------- */
+@layer views {
+  #pushSlot:empty { display: none; }
+  #pushSlot { margin: 14px 0 0; }
+  .portal-streak + #pushSlot { margin: 0 0 18px; }
+  .push-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "ico text" "actions actions";
+    gap: 10px 14px;
+    align-items: start;
+    padding: 16px;
+    border-radius: var(--r-l);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    container-type: inline-size;
+  }
+  .push-ico { grid-area: ico; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--brand-soft); color: var(--brand-ink); }
+  .push-card[data-push-state="on"] .push-ico { background: var(--ok-soft); color: var(--ok); }
+  .push-card[data-push-state="denied"] .push-ico, .push-card[data-push-state="unsupported"] .push-ico { background: var(--surface-2); color: var(--ink-2); }
+  .push-ico svg { width: 22px; height: 22px; }
+  .push-text { grid-area: text; display: grid; gap: 4px; min-width: 0; }
+  .push-text h2 { display: flex; align-items: center; gap: 8px; font-size: var(--step-1); }
+  .push-on { padding: 2px 9px; border-radius: var(--r-pill); background: var(--ok-soft); color: var(--ok); font-size: var(--step--2); }
+  .push-text p { margin: 0; color: var(--ink-2); font-size: var(--step--1); line-height: 1.5; }
+  .push-streak { margin-top: 4px; font-size: var(--step--1); font-weight: 700; display: flex; gap: 8px; align-items: center; }
+  .push-msg { color: var(--brand-ink) !important; font-weight: 700; }
+  .push-actions { grid-area: actions; display: flex; gap: 8px; }
+  .push-actions:empty { display: none; }
+  .push-actions > * { flex: 1; }
+  @container (min-width: 560px) {
+    .push-card { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "ico text actions"; align-items: center; }
+    .push-actions > * { flex: 0 0 auto; }
+  }
 }

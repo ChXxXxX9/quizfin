@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="study-goal.css" />
   <link rel="stylesheet" href="promo.css" />
+  <link rel="stylesheet" href="announcements.css" />
 </head>
 <body class="course-bagnino has-nav app-locked" data-view="none">
   <a class="skip-link" href="#mainContent">Vai al contenuto</a>
@@ -73,6 +74,8 @@
           <h1 id="homeTitle">Assistenti Bagnanti Piscina</h1>
         </header>
 
+        <div id="announcementsPanel" class="hidden"></div>
+
         <div class="home-top">
           <section class="hero" aria-labelledby="heroTitle">
             <div class="dial" data-dial-source="#mixedMiniText" role="img" aria-label="Avanzamento del quiz misto">
@@ -91,7 +94,7 @@
           <div id="studyGoalSlot"></div>
         </div>
 
-        <div id="announcementsPanel" class="hidden"></div>
+        <div id="pushSlot"></div>
 
         <section class="section" aria-labelledby="secTrain">
           <div class="section-head"><h2 id="secTrain">Allenati</h2></div>
@@ -418,6 +421,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="gate.js"></script>
   <script src="account-actions.js"></script>
   <script src="study-goal.js"></script>
   <script src="bagnino_questions.js"></script>
@@ -425,6 +429,9 @@
   <script src="app_bagnino.js"></script>
   <script src="shell.js"></script>
   <script src="promo.js"></script>
+  <script src="qr.js"></script>
+  <script src="announcements.js"></script>
+  <script src="push.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

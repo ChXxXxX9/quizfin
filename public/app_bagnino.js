@@ -430,26 +430,16 @@
 
         const courseSettingsSnap = await fetchCourseSettings();
         const siteSnap = FEATURE_SETTINGS.site || {};
-        if (siteSnap.maintenance) {
-          lockApp('Sito in manutenzione', escapeHtml(siteSnap.maintenanceMessage || 'Il sito è temporaneamente in manutenzione. Riprova più tardi.'), 'Manutenzione');
+        // Manutenzione e blocchi dell'admin: schermata dedicata (gate.js), separata dallo stato dell'account
+        const systemGate = (kind, scope, title, reason) => {
+          lockApp(title, escapeHtml(reason || ''), kind === 'maintenance' ? 'Manutenzione' : 'Bloccato');
           setAuthControls('blocked');
-          return;
-        }
-        if (siteSnap.blocked) {
-          lockApp('Sito non disponibile', `L’accesso al sito è stato bloccato per tutti gli utenti.${siteSnap.blockReason ? `<br><strong>Motivo:</strong> ${escapeHtml(siteSnap.blockReason)}` : ''}`, 'Bloccato');
-          setAuthControls('blocked');
-          return;
-        }
-        if (courseSettingsSnap.maintenance) {
-          lockApp('Corso in manutenzione', escapeHtml(courseSettingsSnap.maintenanceMessage || 'Il corso è temporaneamente in manutenzione. Riprova più tardi.'), 'Manutenzione');
-          setAuthControls('blocked');
-          return;
-        }
-        if (courseSettingsSnap.blocked || courseSettingsSnap.hidden) {
-          lockApp('Corso non disponibile', `L’accesso a <strong>${escapeHtml(COURSE_LABEL)}</strong> è momentaneamente sospeso per tutti gli utenti.${courseSettingsSnap.blockReason ? `<br><strong>Motivo:</strong> ${escapeHtml(courseSettingsSnap.blockReason)}` : ''}`, 'Bloccato');
-          setAuthControls('blocked');
-          return;
-        }
+          window.QuizGate?.show({ kind, scope, reason, courseLabel: COURSE_LABEL });
+        };
+        if (siteSnap.maintenance) { systemGate('maintenance', 'site', 'Sito in manutenzione', siteSnap.maintenanceMessage); return; }
+        if (siteSnap.blocked) { systemGate('blocked', 'site', 'Sito non disponibile', siteSnap.blockReason); return; }
+        if (courseSettingsSnap.maintenance) { systemGate('maintenance', 'course', 'Corso in manutenzione', courseSettingsSnap.maintenanceMessage); return; }
+        if (courseSettingsSnap.blocked || courseSettingsSnap.hidden) { systemGate('blocked', 'course', 'Corso non disponibile', courseSettingsSnap.blockReason); return; }
 
         if (access.banned) {
           lockApp('Account bloccato', `Questo account è stato bloccato.${access.banReason ? `<br><strong>Motivo:</strong> ${escapeHtml(access.banReason)}` : ''}`, 'Bloccato');
@@ -946,58 +936,9 @@ ${html}`));
     }
   }
 
-  async function loadAnnouncements() {
-    if (!window.FirebaseQuiz?.configured || !currentUser || !accessGranted) return;
-    try {
-      const courseSnap = await window.FirebaseQuiz.db.collection('announcements')
-        .where('active', '==', true)
-        .where('scope', '==', COURSE_ID)
-        .limit(20)
-        .get();
-      const items = [];
-      courseSnap.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
-      if (els.announcementsPanel) { els.announcementsPanel.classList.add('hidden'); els.announcementsPanel.innerHTML = ''; }
-      if (!items.length) return;
-      items.sort((a, b) => Number(b.createdAt?.seconds || 0) - Number(a.createdAt?.seconds || 0));
-      showAnnouncementPopup(items);
-    } catch (error) {
-      console.warn('Annunci non caricati:', error);
-    }
-  }
+  // Annunci: li carica e li mostra announcements.js (popup, banner, schermo intero, conferme)
+  async function loadAnnouncements() { /* gestiti da announcements.js */ }
 
-  function showAnnouncementPopup(items) {
-    const storageKey = `quizNuotoSeenAnnouncements:${currentUser.uid}:${COURSE_ID}`;
-    let seen = [];
-    try { seen = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch { seen = []; }
-    const unseen = items.filter((item) => !seen.includes(item.id));
-    if (!unseen.length) return;
-    const modal = document.createElement('div');
-    modal.className = 'modal site-dialog-modal';
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    const main = unseen[0] || {};
-    modal.innerHTML = `
-      <div class="modal-card account-request-card site-dialog-card announcement-dialog-card">
-        <div class="modal-head">
-          <div>
-            <p class="eyebrow">Annuncio admin</p>
-            <h3>${escapeHtml(main.title || 'Annuncio')}</h3>
-          </div>
-          <button class="icon-btn" type="button" data-close-announcement aria-label="Chiudi">×</button>
-        </div>
-        <div class="announcement-popup-list">
-          ${unseen.map((item, index) => `<div class="announcement-popup-item ${index === 0 ? 'featured' : ''}">${index === 0 ? '' : `<strong>${escapeHtml(item.title || 'Annuncio')}</strong>`}<p>${escapeHtml(item.message || '')}</p></div>`).join('')}
-        </div>
-        <div class="site-dialog-actions"><button class="primary-btn" type="button" data-close-announcement>Ho capito</button></div>
-      </div>`;
-    const close = () => {
-      const nextSeen = [...new Set([...seen, ...unseen.map((item) => item.id)])];
-      localStorage.setItem(storageKey, JSON.stringify(nextSeen));
-      modal.remove();
-    };
-    modal.querySelectorAll('[data-close-announcement]').forEach((btn) => btn.addEventListener('click', close));
-    document.body.appendChild(modal);
-  }
 
   function setupTheme() {
     const saved = localStorage.getItem('quizNuotoTheme') || 'light';

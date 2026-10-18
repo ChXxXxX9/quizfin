@@ -1,0 +1,153 @@
+/* ==========================================================================
+   Quiz Nuoto — annunci dello staff (announcements.css)
+   Popup, banner in cima alla pagina, schermo intero; testo formattato,
+   immagine, QR code e pulsanti. Colori per tipo: info, novità, avviso,
+   importante, evento (si adattano al tema chiaro/scuro).
+   ========================================================================== */
+@layer components {
+  .ann {
+    --ann-accent: var(--brand);
+    --ann-soft: var(--brand-soft);
+    position: relative;
+    display: grid;
+    gap: 0;
+    min-width: 0;
+    border-radius: var(--r-l);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    text-align: left;
+  }
+  .ann-tone-info { --ann-accent: oklch(var(--l-sem) 0.15 250); --ann-soft: oklch(var(--l-sem-soft) 0.03 250); }
+  .ann-tone-success { --ann-accent: var(--ok); --ann-soft: var(--ok-soft); }
+  .ann-tone-warning { --ann-accent: var(--warn); --ann-soft: var(--warn-soft); }
+  .ann-tone-danger { --ann-accent: var(--danger); --ann-soft: var(--danger-soft); }
+  .ann-tone-event { --ann-accent: oklch(var(--l-sem) 0.17 305); --ann-soft: oklch(var(--l-sem-soft) 0.035 305); }
+
+  .ann::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--ann-accent); z-index: 1; }
+  .ann-main { display: grid; gap: 10px; padding: 18px 18px 18px 22px; min-width: 0; }
+  .ann-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 4px 10px; border-radius: var(--r-pill); background: var(--ann-soft); color: var(--ann-accent); font-size: var(--step--2); font-weight: 700; }
+  .ann-title { font-size: var(--step-2); line-height: 1.15; letter-spacing: -0.015em; overflow-wrap: anywhere; }
+  .ann-text { display: grid; gap: 8px; color: var(--ink); font-size: var(--step-0); line-height: 1.55; overflow-wrap: anywhere; }
+  .ann-text p { margin: 0; }
+  .ann-text .ann-heading { font-weight: 700; font-size: var(--step-1); }
+  .ann-text ul, .ann-text ol { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
+  .ann-text a { color: var(--ann-accent); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  .ann-text strong { font-weight: 700; }
+
+  .ann-media { margin: 0; background: var(--surface-2); }
+  .ann-media img { display: block; width: 100%; max-height: 340px; object-fit: cover; }
+  .ann-media.ann-fit-contain img { object-fit: contain; max-height: 420px; background: var(--surface-2); }
+
+  .ann-qr { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: var(--r-m); background: var(--surface-2); }
+  .ann-qr svg { flex: 0 0 auto; width: 120px; height: 120px; border-radius: 10px; background: #fff; }
+  .ann-qr-text { display: grid; gap: 4px; min-width: 0; font-size: var(--step--1); overflow-wrap: anywhere; }
+  .ann-qr-text a { color: var(--ann-accent); font-weight: 700; }
+
+  .ann-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ann-buttons > a { flex: 1 1 160px; text-decoration: none; }
+
+  /* ---------- Banner in cima alla pagina ---------- */
+  .ann-slot { display: grid; gap: 12px; margin: 0 0 16px; }
+  .ann-slot[hidden] { display: none; }
+  .ann-banner-wrap { position: relative; }
+  .ann-banner-wrap > .ann-x { position: absolute; top: 10px; right: 10px; z-index: 2; width: 38px; height: 38px; background: var(--surface-2); }
+  .ann-banner-wrap .ann-footer { position: relative; margin-top: -6px; padding: 0 18px 16px 22px; background: var(--surface); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 var(--r-l) var(--r-l); }
+  .ann-banner-wrap:has(.ann-footer) .ann { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 0; }
+  .ann-banner-wrap:has(> .ann-x) .ann-banner .ann-main { padding-right: 52px; }
+  .ann-banner { background: linear-gradient(135deg, var(--ann-soft), var(--surface) 70%); }
+  @container (min-width: 640px) {
+    .ann-banner.has-media { grid-template-columns: minmax(180px, 36%) minmax(0, 1fr); }
+    .ann-banner.has-media .ann-media img { height: 100%; max-height: 260px; }
+  }
+  .ann-slot { container-type: inline-size; }
+
+  /* ---------- Popup ---------- */
+  html.ann-lock, html.ann-lock body { overflow: hidden; }
+  .ann-modal .ann-card { position: relative; display: grid; gap: 0; padding: 0; overflow: hidden; max-height: min(92dvh, 900px); }
+  .ann-modal .ann-card > .ann { border: 0; border-radius: 0; overflow: auto; }
+  .ann-modal .ann-x { position: absolute; top: 12px; right: 12px; z-index: 3; width: 40px; height: 40px; background: color-mix(in oklch, var(--surface) 85%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .ann-modal .ann-card:has(> .ann-x) .ann:not(.has-media) .ann-kicker { margin-right: 52px; }
+  .ann-modal .ann-card:has(> .ann-x) .ann:not(.has-media) .ann-title { padding-right: 8px; }
+  .ann-modal.ann-modal-popup .ann-card::before { display: none; }
+  .ann-footer { display: grid; gap: 8px; padding: 14px 18px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); }
+  .ann-footer .primary-btn { width: 100%; }
+  .ann-ack-note { margin: 0; color: var(--ink-2); font-size: var(--step--1); text-align: center; }
+
+  /* ---------- Schermo intero ---------- */
+  .ann-modal-full { align-items: stretch; padding: 0; background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .ann-modal-full .ann-card { width: 100%; max-width: none; max-height: none; height: 100dvh; border-radius: 0; grid-template-rows: minmax(0, 1fr) auto; animation: annFull .45s var(--ease); }
+  .ann-modal-full .ann-card > .ann { display: grid; align-content: center; justify-items: center; background: radial-gradient(120% 70% at 50% 0%, var(--ann-soft), var(--bg) 70%); }
+  .ann-modal-full .ann::before { inset: 0 0 auto 0; width: auto; height: 6px; }
+  .ann-modal-full .ann-media { width: 100%; max-width: 760px; margin: 28px auto 0; border-radius: var(--r-l); overflow: hidden; background: transparent; }
+  .ann-modal-full .ann-media img { max-height: 46dvh; object-fit: contain; }
+  .ann-modal-full .ann-main { width: 100%; max-width: 680px; padding: 24px 22px 28px; text-align: center; justify-items: center; }
+  .ann-modal-full .ann-title { font-size: var(--step-4); }
+  .ann-modal-full .ann-text { text-align: left; font-size: var(--step-1); }
+  .ann-modal-full .ann-footer { max-width: 680px; width: 100%; margin: 0 auto; border-top: 0; background: transparent; }
+  @keyframes annFull { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
+
+  @media (min-width: 768px) {
+    .ann-modal.ann-modal-popup .ann-card { width: min(100%, 560px); }
+  }
+}
+
+/* ---------- Pannello admin: composer ---------- */
+@layer views {
+  .ann-admin { display: grid; gap: 16px; }
+  .ann-composer-grid { display: grid; gap: 18px; container-type: inline-size; }
+  @media (min-width: 1100px) {
+    .ann-composer-grid { grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr); align-items: start; }
+    .ann-preview-pane { position: sticky; top: calc(60px + 64px + env(safe-area-inset-top)); }
+  }
+  .ann-form { display: grid; gap: 14px; }
+  .ann-form fieldset { display: grid; gap: 8px; margin: 0; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: var(--r-m); background: var(--surface); min-width: 0; }
+  .ann-form legend { padding: 0 6px; font-weight: 700; font-size: var(--step--1); color: var(--brand-ink); }
+  .ann-form label { font-size: var(--step--1); font-weight: 700; color: var(--ink-2); }
+  .ann-form label.checkline { font-weight: 400; color: var(--ink); display: flex; gap: 10px; align-items: flex-start; }
+  .ann-form input[type="text"], .ann-form input[type="url"], .ann-form input[type="search"], .ann-form input[type="number"], .ann-form input[type="datetime-local"], .ann-form select, .ann-form textarea { width: 100%; }
+  .ann-form textarea { min-height: 150px; font-family: var(--font-ui); line-height: 1.5; resize: vertical; }
+  .ann-form select[size] { min-height: 140px; }
+  .ann-hint { margin: 0; color: var(--ink-2); font-size: var(--step--2); line-height: 1.5; }
+  .ann-hint code { padding: 1px 5px; border-radius: 6px; background: var(--surface-2); font-size: .95em; }
+  .ann-toolbar { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ann-toolbar button { min-height: 36px; padding: 0 12px; border-radius: var(--r-pill); border: 1.5px solid var(--line-2); background: var(--surface); color: var(--ink); font: 700 var(--step--1)/1 var(--font-ui); cursor: pointer; }
+  .ann-toolbar button:hover { border-color: var(--brand); color: var(--brand-ink); }
+  .ann-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ann-chip { position: relative; cursor: pointer; }
+  .ann-chip input { position: absolute; opacity: 0; pointer-events: none; }
+  .ann-chip span { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border-radius: var(--r-pill); border: 1.5px solid var(--line-2); background: var(--surface); color: var(--ink); font-size: var(--step--1); font-weight: 700; }
+  .ann-chip input:checked + span { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-ink); }
+  .ann-chip input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .ann-image-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ann-file { cursor: pointer; }
+  .ann-btn-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 8px; }
+  .ann-two { display: grid; gap: 10px; }
+  @container (min-width: 520px) { .ann-two { grid-template-columns: 1fr 1fr; } }
+  .ann-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ann-form-actions > * { flex: 1 1 160px; }
+  .ann-preview-pane { display: grid; gap: 10px; min-width: 0; }
+  .ann-preview-frame { border-radius: var(--r-l); overflow: hidden; border: 1px dashed var(--line-2); background: var(--bg); padding: 12px; }
+  .ann-preview-frame .ann-footer { border-radius: 0 0 var(--r-l) var(--r-l); }
+  .ann-admin-card details { display: inline; }
+  .ann-admin-card summary { display: inline; cursor: pointer; color: var(--brand-ink); font-weight: 700; }
+}
+
+/* ---------- Pannello admin: notifiche ---------- */
+@layer views {
+  .push-admin { display: grid; gap: 16px; }
+  .push-admin-stats { margin: 4px 0 12px; }
+  .push-hours { display: flex; flex-wrap: wrap; gap: 6px; }
+  .push-preview { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: var(--surface-2); border: 1px solid var(--line); max-width: 420px; }
+  .push-preview img { width: 40px; height: 40px; border-radius: 10px; }
+  .push-preview div { display: grid; gap: 1px; min-width: 0; }
+  .push-preview small { color: var(--ink-2); font-size: var(--step--2); }
+  .push-preview strong, .push-preview span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .push-preview span { color: var(--ink-2); font-size: var(--step--1); }
+}
+
+@layer views {
+  .push-admin-stats .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .push-admin-stats .stat-card { min-width: 0; }
+  .push-admin-stats .stat-card span { overflow-wrap: anywhere; }
+}

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="study-goal.css" />
   <link rel="stylesheet" href="promo.css" />
+  <link rel="stylesheet" href="announcements.css" />
 </head>
 <body class="course-portal admin-page">
   <a class="skip-link" href="#adminMain">Vai al contenuto</a>
@@ -65,6 +66,7 @@
         <button class="admin-tab" type="button" data-section="courses">Corsi</button>
         <button class="admin-tab" type="button" data-section="streak">Streak</button>
         <button class="admin-tab" type="button" data-section="fad">FAD</button>
+        <button class="admin-tab" type="button" data-section="notifications">Notifiche</button>
         <button class="admin-tab" type="button" data-section="promo">Nuotifica</button>
       </div>
 
@@ -98,33 +100,11 @@
         </section>
       </div>
 
-      <div class="admin-grid admin-section hidden" id="announcementsSection">
-        <section class="panel">
-          <h3>Nuovo annuncio</h3>
-          <div class="admin-form">
-            <label>Destinatario</label>
-            <select id="announcementScope">
-              <option value="global">Tutti gli utenti</option>
-              <option value="istruttore">Solo corso Istruttore di Nuoto</option>
-              <option value="bagnino">Solo corso Assistenti Bagnanti Piscina</option>
-              <option value="arte">Solo corso Arte · Quinto Liceo</option>
-              <option value="user">Utente selezionato</option>
-            </select>
-            <label>Titolo</label>
-            <input id="announcementTitle" type="text" placeholder="Titolo annuncio" />
-            <label>Messaggio</label>
-            <textarea id="announcementMessage" rows="5" placeholder="Testo annuncio"></textarea>
-            <button id="createAnnouncementBtn" class="primary-btn" type="button">Pubblica annuncio</button>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="section-title compact-title">
-            <h3>Annunci attivi</h3>
-            <button id="refreshAnnouncementsBtn" class="secondary-btn small-btn" type="button">Aggiorna</button>
-          </div>
-          <div id="announcementsList" class="admin-list"></div>
-        </section>
+      <div class="admin-section hidden" id="announcementsSection">
+        <!-- Composer e elenco annunci: announcements-admin.js -->
+        <div id="annAdmin" class="ann-admin"><p class="message">Carico gli annunci…</p></div>
+        <!-- Vecchi campi, non più usati (restano per compatibilità con admin.js) -->
+        <div hidden><select id="announcementScope"></select><input id="announcementTitle" /><textarea id="announcementMessage"></textarea><button id="createAnnouncementBtn" type="button"></button><button id="refreshAnnouncementsBtn" type="button"></button><div id="announcementsList"></div></div>
       </div>
 
       <div class="admin-section hidden" id="coursesSection">
@@ -166,7 +146,7 @@
           <div class="section-title compact-title">
             <div>
               <h3>Simulatore streak (test interno)</h3>
-              <p class="message">Non tocca account reali: fa avanzare un giorno finto alla volta con la <strong>stessa identica logica</strong> usata sul sito, cosi puoi vedere a occhio che la streak sale nei giorni consecutivi, si ferma se salti un giorno e riparte da 1 quando riprendi.</p>
+              <p class="message">Non tocca account reali: fa avanzare un giorno finto alla volta con la <strong>stessa identica logica</strong> usata sul sito, così puoi vedere a occhio la regola: <strong>+1</strong> per ogni giorno con l’obiettivo raggiunto, <strong>−1</strong> per ogni giorno saltato (mai sotto zero). Esempio: 3 → salti un giorno → 2 → obiettivo raggiunto → 3.</p>
             </div>
           </div>
           <div class="study-widget-body" style="margin-bottom:14px;">
@@ -215,6 +195,11 @@
         </section>
       </div>
 
+      <div class="admin-section hidden" id="notificationsSection">
+        <!-- Notifiche push: notifications-admin.js -->
+        <div id="pushAdmin" class="push-admin"><p class="message">Carico…</p></div>
+      </div>
+
       <div class="admin-section hidden" id="promoSection">
         <section class="panel">
           <div class="section-title compact-title">
@@ -243,5 +228,9 @@
   <script src="admin.js"></script>
   <script src="shell.js"></script>
   <script src="promo.js"></script>
+  <script src="qr.js"></script>
+  <script src="announcements.js"></script>
+  <script src="announcements-admin.js"></script>
+  <script src="notifications-admin.js"></script>
 </body>
 </html>

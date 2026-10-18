@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quiz-nuoto-v49_firebase';
+const CACHE_NAME = 'quiz-nuoto-v50_annunci-notifiche';
 const APP_SHELL = [
   './',
   './index.html',
@@ -10,9 +10,6 @@ const APP_SHELL = [
   './study-goal.css',
   './assets/fonts/adventor-regular.woff',
   './assets/fonts/adventor-bold.woff',
-  './assets/fonts/schola-regular.woff',
-  './assets/fonts/schola-bold.woff',
-  './assets/fonts/schola-italic.woff',
   './shell.js',
   './promo.js',
   './promo.css',
@@ -28,6 +25,12 @@ const APP_SHELL = [
   './admin.js',
   './firebase-config.js',
   './account-actions.js',
+  './gate.js',
+  './qr.js',
+  './announcements.js',
+  './announcements.css',
+  './push.js',
+  './badge-96.png',
   './questions.js',
   './explanations.js',
   './bagnino_questions.js',
@@ -56,4 +59,45 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
   );
+});
+
+// ---------------- Notifiche push (Firebase Cloud Messaging) ----------------
+// I messaggi arrivano con i nostri campi in "data": la notifica la mostra questo service worker,
+// così funziona allo stesso modo su Android, iPhone (app aggiunta alla Home) e computer.
+function readPush(event) {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch (e) { payload = { body: event.data ? event.data.text() : '' }; }
+  const d = payload.data || payload.notification || payload;
+  return {
+    title: d.titolo || d.title || 'Quiz Nuoto',
+    body: d.corpo || d.body || '',
+    url: d.url || (payload.fcmOptions && payload.fcmOptions.link) || './index.html',
+    tag: d.tag || undefined
+  };
+}
+self.addEventListener('push', (event) => {
+  const m = readPush(event);
+  event.waitUntil(self.registration.showNotification(m.title, {
+    body: m.body,
+    icon: './icon-192.png',
+    badge: './badge-96.png',
+    tag: m.tag,
+    renotify: Boolean(m.tag),
+    data: { url: m.url }
+  }));
+});
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = new URL((event.notification.data && event.notification.data.url) || './index.html', self.location.href).href;
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const w of windows) {
+      if (new URL(w.url).origin === self.location.origin && 'focus' in w) {
+        await w.focus();
+        if ('navigate' in w && w.url !== url) { try { await w.navigate(url); } catch (e) { /* niente */ } }
+        return;
+      }
+    }
+    await self.clients.openWindow(url);
+  })());
 });
