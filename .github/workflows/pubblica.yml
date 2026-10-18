@@ -110,6 +110,21 @@ jobs:
           fi
           echo "### Pubblicato su https://quiznuoto.web.app" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Controlla che online ci sia la nuova versione
+        run: |
+          atteso=$(grep -m1 -o "CACHE_NAME = '[^']*'" public/service-worker.js | cut -d"'" -f2)
+          online=""
+          for i in 1 2 3 4 5 6; do
+            online=$(curl -fsS "https://quiznuoto.web.app/service-worker.js?controllo=$(date +%s)" | grep -m1 -o "CACHE_NAME = '[^']*'" | cut -d"'" -f2 || true)
+            [ "$online" = "$atteso" ] && break
+            sleep 10
+          done
+          if [ "$online" = "$atteso" ]; then
+            echo "::notice title=Online::quiznuoto.web.app è alla versione $online"
+          else
+            echo "::warning title=Online::Online risulta '$online' invece di '$atteso'"
+          fi
+
       - name: Pulizia
         if: ${{ always() }}
         run: rm -f "$RUNNER_TEMP/account.json"
