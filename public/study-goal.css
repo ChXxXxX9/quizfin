@@ -22,7 +22,7 @@
   .study-widget-body { grid-area: body; display: flex; align-items: center; gap: 16px; }
   .study-flame-wrap { display: grid; justify-items: center; gap: 2px; min-width: 76px; text-align: center; }
   .study-flame-wrap strong { font-size: 2.1rem; line-height: 1; font-variant-numeric: tabular-nums; }
-  .study-flame-wrap span { font-size: var(--step--2); color: var(--ink-2); }
+  .study-flame-wrap > span { font-size: var(--step--2); color: var(--ink-2); }
   .study-widget-copy { display: grid; gap: 4px; flex: 1; min-width: 0; }
   .study-widget-copy > strong { font-size: var(--step-0); }
   .study-widget-copy > span { font-size: var(--step--2); color: var(--ink-2); line-height: 1.45; }
@@ -46,7 +46,7 @@
   @container (min-width: 620px) { .study-portal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   .study-portal-tile {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-columns: minmax(44px, auto) minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 12px;
     padding: 10px 14px;
@@ -54,7 +54,8 @@
     background: var(--surface-2);
     min-width: 0;
   }
-  .study-portal-tile .study-fire { grid-row: 1 / span 2; font-size: 1.9rem; text-align: center; }
+  .study-portal-tile .study-fire-box { grid-row: 1 / span 2; }
+  .study-portal-tile .study-fire { font-size: 1.9rem; text-align: center; }
   .study-portal-text { display: contents; }
   .study-portal-text b { grid-column: 2; font-size: var(--step--1); line-height: 1.25; min-width: 0; }
   .study-portal-text small { grid-column: 2; font-size: var(--step--2); color: var(--ink-2); line-height: 1.3; }
@@ -125,4 +126,45 @@
   .study-rank-trend { font-weight: 700; color: var(--ink-2); }
   .study-rank-trend.up { color: var(--ok); }
   .study-rank-trend.down { color: var(--danger); }
+}
+
+
+/* ---------- Conto alla rovescia sul fuoco: fino a mezzanotte, secondo per secondo ---------- */
+@layer components {
+  .study-fire-box { position: relative; display: grid; justify-items: center; }
+  .study-countdown {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: baseline;
+    margin-top: -9px;
+    padding: 3px 8px 3px;
+    border-radius: var(--r-pill);
+    background: var(--ink);
+    color: var(--bg);
+    font-size: .78rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: .02em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    box-shadow: 0 8px 16px -10px oklch(0% 0 0 / .7);
+    transition: background-color .4s ease, color .4s ease;
+  }
+  .study-countdown[hidden] { display: none; }
+  .study-countdown > span { display: inline-block; min-width: 2ch; text-align: center; }
+  .study-countdown > i { font-style: normal; opacity: .55; padding: 0 1px; animation: studyCdBlink 1s steps(1, end) infinite; }
+  .study-countdown .is-tick { animation: studyCdTick .34s cubic-bezier(.2, .9, .3, 1.35); }
+  .study-countdown.is-close { background: var(--warn); color: oklch(99% 0 0); }
+  .study-countdown.is-urgent { background: var(--danger); color: oklch(99% 0 0); animation: studyCdPulse 1s ease-in-out infinite; }
+  .study-countdown.is-small { margin-top: -6px; padding: 2px 6px; font-size: .64rem; }
+  .study-goal-widget[data-streak-state="done"] .study-countdown,
+  .study-goal-widget[data-streak-state="none"] .study-countdown { display: none; }
+  @keyframes studyCdTick { from { transform: translateY(-60%); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes studyCdBlink { 50% { opacity: .3; } }
+  @keyframes studyCdPulse { 50% { box-shadow: 0 0 0 5px color-mix(in oklch, var(--danger) 25%, transparent); } }
+  @media (prefers-reduced-motion: reduce) {
+    .study-countdown .is-tick, .study-countdown > i, .study-countdown.is-urgent { animation: none; }
+  }
 }

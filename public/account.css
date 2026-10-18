@@ -1,0 +1,116 @@
+/* ==========================================================================
+   Quiz Nuoto — sezione Account e notifiche (account.css)
+   Foglio "Account" dei corsi, finestra Account di portale e Arte,
+   pannello notifiche e popup "Abbiamo aggiunto le notifiche".
+   ========================================================================== */
+
+@layer components {
+  /* ---------- Sezioni a fisarmonica ---------- */
+  .acct { display: grid; gap: 8px; }
+  .acct-sec { border-radius: var(--r-m); background: var(--surface-2); border: 1px solid transparent; transition: background-color .2s, border-color .2s; }
+  .acct-sec[open] { background: var(--surface); border-color: var(--line); box-shadow: var(--shadow-1); }
+  .acct-sec > summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 60px; padding: 10px 14px; list-style: none; border-radius: inherit; }
+  .acct-sec > summary::-webkit-details-marker { display: none; }
+  .acct-sec > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .acct-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: var(--brand-soft); color: var(--brand-ink); }
+  .acct-ico svg { width: 19px; height: 19px; }
+  .acct-sum { display: grid; gap: 2px; min-width: 0; text-align: left; }
+  .acct-sum b { font-size: var(--step-0); }
+  .acct-sum small { color: var(--ink-2); font-size: var(--step--1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .acct-chev { display: grid; place-items: center; width: 28px; height: 28px; color: var(--ink-2); transition: transform .2s var(--ease); }
+  .acct-chev svg { width: 18px; height: 18px; }
+  .acct-sec[open] .acct-chev { transform: rotate(90deg); }
+  .acct-sec[data-acct-sec="push"] .acct-ico { background: color-mix(in srgb, var(--rope) 30%, var(--surface)); color: var(--rope-ink); }
+  .acct-sec[data-acct-sec="password"] .acct-ico { background: var(--surface-3); color: var(--ink); }
+
+  .acct-form, .acct-body { display: grid; gap: 10px; padding: 4px 14px 16px; text-align: left; }
+  .acct-form label { display: grid; gap: 6px; font-size: var(--step--1); font-weight: 700; color: var(--ink-2); }
+  .acct-form label.acct-show { display: flex; align-items: center; gap: 10px; font-weight: 400; color: var(--ink); }
+  .acct-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 380px) { .acct-two { grid-template-columns: 1fr; } }
+  .acct-note { margin: 0; color: var(--ink-2); font-size: var(--step--2); line-height: 1.45; }
+  .acct-actions { display: flex; gap: 8px; }
+  .acct-actions > * { flex: 1 1 auto; }
+  .acct-msg { margin: 0; font-size: var(--step--1); font-weight: 700; color: var(--brand-ink); }
+  .acct-msg:empty { display: none; }
+  .acct-msg[data-tone="ok"] { color: var(--ok); }
+  .acct-msg[data-tone="error"] { color: var(--danger); }
+  .acct-forgot { padding-top: 4px; border-top: 1px dashed var(--line-2); }
+  .acct-forgot button { padding: 0; border: 0; background: none; color: var(--brand-ink); font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .acct-forgot button:disabled { opacity: .5; cursor: default; }
+  .acct-meter { height: 6px; border-radius: var(--r-pill); background: var(--surface-3); overflow: hidden; }
+  .acct-meter span { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--danger); transition: width .3s var(--ease), background-color .3s; }
+  .acct-meter[data-level="1"] span { width: 25%; background: var(--danger); }
+  .acct-meter[data-level="2"] span { width: 50%; background: var(--warn); }
+  .acct-meter[data-level="3"] span { width: 75%; background: var(--ok); }
+  .acct-meter[data-level="4"] span { width: 100%; background: var(--ok); }
+
+  /* ---------- Pannello notifiche ---------- */
+  .push-panel { display: grid; gap: 10px; }
+  .push-panel-text { margin: 0; color: var(--ink-2); font-size: var(--step--1); line-height: 1.5; }
+  .push-streak { font-size: var(--step--1); font-weight: 700; padding: 4px 0; }
+  .push-msg { margin: 0; color: var(--brand-ink); font-weight: 700; font-size: var(--step--1); }
+  .push-actions { display: flex; gap: 8px; }
+  .push-actions:empty { display: none; }
+  .push-actions > * { flex: 1 1 auto; }
+
+  /* ---------- Finestra Account (portale, Arte) ---------- */
+  .account-modal { z-index: 1100; }
+  .account-modal-card { display: grid; gap: 14px; }
+  .account-modal-card .modal-head { margin-bottom: 0; }
+  .account-modal-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .account-modal-id h3 { margin: 0 !important; overflow-wrap: anywhere; }
+  .account-avatar { display: grid; place-items: center; flex: 0 0 auto; width: 48px; height: 48px; border-radius: 50%; background: var(--brand); color: var(--on-brand); font-size: 1.3rem; font-weight: 700; }
+  .account-email { margin: 2px 0 0; color: var(--ink-2); font-size: var(--step--1); overflow-wrap: anywhere; }
+  .account-modal-card > .account-logout { width: 100%; margin-top: 4px; }
+  .account-open-btn svg { width: 20px; height: 20px; }
+
+  /* ---------- Popup "Abbiamo aggiunto le notifiche" ---------- */
+  .push-intro { z-index: 1150; }
+  .push-intro-card { display: grid; justify-items: center; gap: 10px; text-align: center; padding-top: 34px; }
+  .push-intro-card .eyebrow { color: var(--rope-ink); }
+  .push-intro-card h2 { margin: 0; font-size: var(--step-3); line-height: 1.05; letter-spacing: -0.02em; text-wrap: balance; }
+  .push-intro-text { margin: 0; max-width: 44ch; color: var(--ink-2); font-size: var(--step-0); line-height: 1.55; }
+  .push-intro-art { position: relative; display: grid; place-items: center; width: 112px; height: 112px; margin-bottom: 4px; }
+  .push-intro-bell { position: relative; z-index: 1; display: grid; place-items: center; width: 84px; height: 84px; border-radius: 28px; background: linear-gradient(160deg, var(--brand), var(--brand-deep)); color: oklch(99% 0 0); box-shadow: 0 18px 30px -16px var(--brand); animation: pushBellRing 2.6s var(--ease) .4s infinite; transform-origin: 50% 10%; }
+  .push-intro-bell svg { width: 42px; height: 42px; }
+  .push-intro-badge { position: absolute; z-index: 2; top: 6px; right: 6px; display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: var(--r-pill); background: var(--sweep); color: oklch(99% 0 0); font-weight: 700; font-size: .9rem; box-shadow: 0 0 0 3px var(--surface); animation: pushBadgePop .5s var(--ease) .2s both; }
+  .push-intro-ring { position: absolute; inset: 14px; border-radius: 32px; border: 2px solid color-mix(in oklch, var(--brand) 45%, transparent); animation: pushRingOut 2.6s ease-out infinite; }
+  .push-intro-ring.r2 { animation-delay: 1.3s; }
+  .push-intro-points { display: grid; gap: 8px; width: 100%; max-width: 380px; margin: 4px 0 0; padding: 0; list-style: none; }
+  .push-intro-points li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r-m); background: var(--surface-2); font-size: var(--step--1); font-weight: 700; text-align: left; }
+  .push-intro-points span { font-size: 1.25rem; }
+  .push-intro-actions { display: grid; gap: 8px; width: 100%; max-width: 380px; margin-top: 6px; }
+  .push-intro-actions > * { width: 100%; }
+  .push-intro-foot { margin: 0; color: var(--ink-2); font-size: var(--step--2); }
+  .push-intro-card .push-msg { max-width: 380px; }
+  .push-intro-card.is-done .push-intro-bell { background: linear-gradient(160deg, var(--ok), oklch(40% 0.1 152)); animation: none; }
+  .push-intro-card.is-done .push-intro-badge, .push-intro-card.is-done .push-intro-ring { display: none; }
+  .push-intro-card.is-done .push-msg { color: var(--ok); }
+  @keyframes pushBellRing {
+    0%, 60%, 100% { transform: rotate(0); }
+    8% { transform: rotate(14deg); } 16% { transform: rotate(-12deg); } 24% { transform: rotate(9deg); }
+    32% { transform: rotate(-6deg); } 40% { transform: rotate(3deg); } 48% { transform: rotate(-1deg); }
+  }
+  @keyframes pushRingOut { from { transform: scale(.85); opacity: .9; } to { transform: scale(1.35); opacity: 0; } }
+  @keyframes pushBadgePop { from { transform: scale(0); } 70% { transform: scale(1.2); } to { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) {
+    .push-intro-bell, .push-intro-ring, .push-intro-badge { animation: none; }
+  }
+  /* Da tablet in su: finestra al centro invece del foglio dal basso */
+  @media (min-width: 768px) {
+    .push-intro, .account-modal { align-items: center; padding: 24px; }
+    .push-intro-card, .account-modal-card { border-radius: 28px; padding-bottom: 28px; animation: acctPop .32s var(--ease); }
+    .push-intro-card { max-width: 520px; }
+    .account-modal-card { max-width: 560px; }
+    .push-intro-card::before, .account-modal-card::before { display: none; }
+  }
+  @keyframes acctPop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+}
+
+@layer views {
+  /* Il foglio Account dei corsi ora ha più contenuto: scorre dentro di sé */
+  body.has-nav:not(.app-locked) #authCard:not(.hidden) { max-height: min(90dvh, 860px); overflow-y: auto; overscroll-behavior: contain; }
+  #accountManage { margin: 0 0 14px; }
+  body.app-locked #accountManage { display: none; }
+}
