@@ -1716,33 +1716,30 @@ ${html}`));
 
   function renderResults(quiz, results, correct, total, vote, points, durationSeconds, weakestSession) {
     const scorePercent = Math.round((vote / 10) * 100);
-    const hintsUsed = results.filter((r) => r.hintUsed).length;
-    els.scoreRing.style.setProperty('--score', `${scorePercent}%`);
-    if (quiz.mode === 'examone') {
-      const passed = correct >= EXAMONE_PASS_THRESHOLD;
+    const exam = quiz.mode === 'examone';
+    const passed = exam && correct >= EXAMONE_PASS_THRESHOLD;
+    els.scoreRing.style.setProperty('--score', `${exam ? Math.round((correct / Math.max(1, total)) * 100) : scorePercent}%`);
+    if (exam) {
       els.scoreRing.textContent = passed ? 'OK' : 'NO';
       els.resultTitle.textContent = passed ? 'AMMESSO' : 'NON AMMESSO';
-      els.resultSummary.textContent = `${correct}/${total} corrette. Tempo: ${formatDuration(durationSeconds)}. ${quiz.finishedByTimeout ? 'Tempo scaduto. ' : ''}Nota: questo esito riguarda solo la simulazione interna del sito, non determina l’ammissione all’esame ufficiale.`;
     } else {
       els.scoreRing.textContent = formatVote(vote);
       els.resultTitle.textContent = correct === total ? 'Perfetto.' : (quiz.finishedByTimeout ? 'Tempo scaduto' : 'Quiz completato');
-      els.resultSummary.textContent = `${correct} risposte corrette su ${total}. Punteggio: ${formatDecimal(points)} / ${total}. Voto: ${formatVote(vote)}/10. Tempo: ${formatDuration(durationSeconds)}. Suggerimenti usati: ${hintsUsed}.`;
     }
+    els.scoreRing.setAttribute('aria-label', exam ? (passed ? 'Ammesso' : 'Non ammesso') : `Voto ${formatVote(vote)} su 10`);
     els.retryMistakesBtn.disabled = lastWrongIds.length === 0;
-
-    if (quiz.mode === 'mixed') {
-      els.mixedWeakPanel.classList.remove('hidden');
-      els.mixedWeakPanel.innerHTML = `<strong>Argomento con più errori in questo quiz:</strong> ${escapeHtml(weakestSession.label)}${weakestSession.count ? ` — ${weakestSession.count} errori` : ' — nessun errore'}.`;
-    } else if (quiz.mode === 'ripassone') {
-      els.mixedWeakPanel.classList.remove('hidden');
-      els.mixedWeakPanel.innerHTML = `<strong>Ripasso completato.</strong>`;
-    } else if (quiz.mode === 'examone') {
-      els.mixedWeakPanel.classList.remove('hidden');
-      els.mixedWeakPanel.innerHTML = `<strong>Argomento più debole nell’Esamone:</strong> ${escapeHtml(weakestSession.label)}${weakestSession.count ? ` — ${weakestSession.count} errori` : ' — nessun errore'}.`;
-    } else {
-      els.mixedWeakPanel.classList.add('hidden');
-      els.mixedWeakPanel.innerHTML = '';
-    }
+    const statsCounted = quiz.mode !== 'ripassone';
+    window.QuizResults?.render({
+      mode: quiz.mode,
+      label: quiz.label,
+      results, correct, total, points, vote, durationSeconds,
+      timeout: Boolean(quiz.finishedByTimeout),
+      passed, threshold: EXAMONE_PASS_THRESHOLD,
+      average: statsCounted ? Number(state.stats.averageScore) : NaN,
+      totalScore: Number(state.stats.totalScore),
+      quizCount: statsCounted ? Number(state.stats.quizCount) : 0,
+      fmtVote: formatVote, fmtDecimal: formatDecimal, fmtDuration: formatDuration
+    });
 
     els.answersReview.innerHTML = results.map(({ question, selectedIndex, isCorrect, hintUsed, points }) => {
       const selectedLetter = selectedIndex === null ? '-' : LETTERS[selectedIndex];

@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="study-goal.css" />
   <link rel="stylesheet" href="promo.css" />
   <link rel="stylesheet" href="announcements.css" />
+  <link rel="stylesheet" href="account.css" />
 </head>
 <body class="course-portal">
   <a class="skip-link" href="#authCard">Vai al contenuto</a>
@@ -24,6 +25,7 @@
       <div class="appbar-actions">
         <button id="adminBellBtn" class="icon-btn notification-btn hidden" type="button" aria-label="Richieste in attesa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="adminPendingBadge" class="notification-badge">0</span></button>
         <button id="adminBtn" class="icon-btn hidden" type="button" aria-label="Area gestione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></button>
+        <button id="accountOpenBtn" class="icon-btn account-open-btn" type="button" data-account-open hidden aria-label="Il tuo account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
         <button id="themeToggle" class="icon-btn" type="button" aria-label="Cambia tema">☀︎</button>
         <button id="logoutBtn" class="ghost-btn small-btn hidden" type="button">Esci</button>
       </div>
@@ -82,7 +84,6 @@
       <div id="promoSlot" hidden></div>
       <div id="courseAccessStats" class="hidden"></div>
       <div id="studyGoalSlot" class="portal-streak"></div>
-      <div id="pushSlot"></div>
 
       <section class="course-grid" aria-label="Corsi disponibili"><div>
         <article id="courseIstruttoreCard" class="course-card" data-course="istruttore">
@@ -177,6 +178,7 @@
   <script src="qr.js"></script>
   <script src="announcements.js"></script>
   <script src="push.js"></script>
+  <script src="account.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

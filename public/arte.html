@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="study-goal.css" />
   <link rel="stylesheet" href="promo.css" />
   <link rel="stylesheet" href="announcements.css" />
+  <link rel="stylesheet" href="account.css" />
 </head>
 <body class="course-arte has-nav" data-view="none">
   <a class="skip-link" href="#arteMain">Vai al contenuto</a>
@@ -32,6 +33,7 @@
       <div class="appbar-title collapses"><small>Corso temporaneo</small><strong>Arte · Quinto Liceo</strong></div>
       <div class="appbar-actions">
         <button id="adminBellBtn" class="icon-btn notification-btn hidden" type="button" aria-label="Richieste in attesa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="adminPendingBadge" class="notification-badge">0</span></button>
+        <button id="accountOpenBtn" class="icon-btn account-open-btn" type="button" data-account-open hidden aria-label="Il tuo account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
         <button id="themeToggle" class="icon-btn" type="button" aria-label="Cambia tema">☀︎</button>
       </div>
     </div>
@@ -72,8 +74,6 @@
           </section>
           <div id="studyGoalSlot"></div>
         </div>
-
-        <div id="pushSlot"></div>
 
         <section class="section" aria-labelledby="secTrain">
           <div class="section-head"><h2 id="secTrain">Allenati</h2></div>
@@ -284,5 +284,6 @@
   <script src="qr.js"></script>
   <script src="announcements.js"></script>
   <script src="push.js"></script>
+  <script src="account.js"></script>
 </body>
 </html>

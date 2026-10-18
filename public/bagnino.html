@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="study-goal.css" />
   <link rel="stylesheet" href="promo.css" />
   <link rel="stylesheet" href="announcements.css" />
+  <link rel="stylesheet" href="account.css" />
 </head>
 <body class="course-bagnino has-nav app-locked" data-view="none">
   <a class="skip-link" href="#mainContent">Vai al contenuto</a>
@@ -52,6 +53,7 @@
         </div>
         <div id="authStatus" class="status-pill">Accesso</div>
       </div>
+      <div id="accountManage" data-account-host hidden></div>
       <div class="auth-grid" id="authControls">
         <input id="emailInput" type="email" placeholder="Email" autocomplete="email" aria-label="Email" />
         <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" aria-label="Password" />
@@ -93,8 +95,6 @@
           </section>
           <div id="studyGoalSlot"></div>
         </div>
-
-        <div id="pushSlot"></div>
 
         <section class="section" aria-labelledby="secTrain">
           <div class="section-head"><h2 id="secTrain">Allenati</h2></div>
@@ -249,18 +249,24 @@
 
       <!-- ============ RISULTATO ============ -->
       <section id="resultsView" class="view" aria-labelledby="resultTitle">
-        <div class="result-card">
-          <p class="eyebrow">Risultato</p>
-          <h2 id="resultTitle">Quiz completato</h2>
-          <div class="score-ring" id="scoreRing">0</div>
-          <p id="resultSummary"></p>
-          <div id="mixedWeakPanel" class="inline-panel hidden"></div>
-          <div class="result-actions">
-            <button id="retryMistakesBtn" class="secondary-btn" type="button">Ripeti gli errori</button>
-            <button id="backHomeFromResultsBtn" class="primary-btn" type="button">Torna alla home</button>
+        <div class="result-layout">
+          <div class="result-card">
+            <p class="eyebrow">Risultato</p>
+            <h2 id="resultTitle">Quiz completato</h2>
+            <div class="score-ring" id="scoreRing">0</div>
+            <div id="resultSummary" class="result-summary"></div>
+            <div id="mixedWeakPanel" class="inline-panel hidden"></div>
+            <div class="result-actions">
+              <button id="retryMistakesBtn" class="secondary-btn" type="button">Ripeti gli errori</button>
+              <button id="backHomeFromResultsBtn" class="primary-btn" type="button">Torna alla home</button>
+            </div>
+          </div>
+          <div class="result-main">
+            <div id="resultTiles" class="result-tiles" aria-label="Dettagli del risultato"></div>
+            <div id="resultReviewHead" class="review-head"></div>
+            <div id="answersReview" class="answers-review"></div>
           </div>
         </div>
-        <div id="answersReview" class="answers-review"></div>
       </section>
 
       <!-- ============ STATISTICHE ============ -->
@@ -424,6 +430,7 @@
   <script src="gate.js"></script>
   <script src="account-actions.js"></script>
   <script src="study-goal.js"></script>
+  <script src="results.js"></script>
   <script src="bagnino_questions.js"></script>
   <script src="bagnino_explanations.js"></script>
   <script src="app_bagnino.js"></script>
@@ -432,6 +439,7 @@
   <script src="qr.js"></script>
   <script src="announcements.js"></script>
   <script src="push.js"></script>
+  <script src="account.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

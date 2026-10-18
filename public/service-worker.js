@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quiz-nuoto-v50_annunci-notifiche';
+const CACHE_NAME = 'quiz-nuoto-v51_account-risultati';
 const APP_SHELL = [
   './',
   './index.html',
@@ -30,6 +30,9 @@ const APP_SHELL = [
   './announcements.js',
   './announcements.css',
   './push.js',
+  './account.js',
+  './account.css',
+  './results.js',
   './badge-96.png',
   './questions.js',
   './explanations.js',

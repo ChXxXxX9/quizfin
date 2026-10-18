@@ -569,12 +569,52 @@
     if (goal.lastMetDate === today) {
       parts.push(`Obiettivo di oggi fatto: streak al sicuro fino a domani.`);
     } else {
-      const left = timeLeftToday();
       parts.push(live > 0
-        ? `Ti mancano ${missing} ${unit} entro mezzanotte (${left.label}): se salti oggi la streak scende a ${live - 1}.`
-        : `Fai ${missing} ${unit} entro mezzanotte (${left.label}) per accendere il fuoco.`);
+        ? `Ti mancano ${missing} ${unit} prima di mezzanotte: se salti oggi la streak scende a ${live - 1}.`
+        : `Fai ${missing} ${unit} prima di mezzanotte per accendere il fuoco.`);
     }
     return parts.join(' ');
+  }
+
+  // ---- Conto alla rovescia fino a mezzanotte, sul fuoco (secondo per secondo) ----
+  function secondsToMidnight(now = new Date()) {
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+    return Math.max(0, Math.floor((end - now) / 1000));
+  }
+  function countdownHtml(extraClass = '') {
+    return `<span class="study-countdown ${extraClass}" data-study-countdown role="timer" aria-label="Tempo che resta fino a mezzanotte"><span data-cd="h">--</span><i>:</i><span data-cd="m">--</span><i>:</i><span class="study-cd-s" data-cd="s">--</span></span>`;
+  }
+  let countdownTimer = null;
+  let countdownDay = '';
+  function tickCountdowns() {
+    const nodes = document.querySelectorAll('[data-study-countdown]');
+    const day = todayKey();
+    if (countdownDay && day !== countdownDay) { countdownDay = day; refreshWidget(); return; }
+    countdownDay = day;
+    if (!nodes.length) return;
+    const left = secondsToMidnight();
+    const values = { h: String(Math.floor(left / 3600)).padStart(2, '0'), m: String(Math.floor((left % 3600) / 60)).padStart(2, '0'), s: String(left % 60).padStart(2, '0') };
+    nodes.forEach((node) => {
+      ['h', 'm', 's'].forEach((k) => {
+        const part = node.querySelector(`[data-cd="${k}"]`);
+        if (!part || part.textContent === values[k]) return;
+        part.textContent = values[k];
+        // "tac": la cifra che cambia scende di scatto
+        part.classList.remove('is-tick');
+        void part.offsetWidth;
+        part.classList.add('is-tick');
+      });
+      node.classList.toggle('is-urgent', left < 3600);
+      node.classList.toggle('is-close', left >= 3600 && left < 3 * 3600);
+    });
+  }
+  function startCountdowns() {
+    if (countdownTimer) return;
+    const loop = () => {
+      tickCountdowns();
+      countdownTimer = setTimeout(loop, 1000 - (Date.now() % 1000) + 8);
+    };
+    loop();
   }
 
   function celebrateMilestone(course, goal) {
@@ -604,7 +644,7 @@
     widget = document.createElement('section');
     if (mountCourse) {
       widget.className = 'study-goal-widget panel';
-      widget.innerHTML = `<div class="study-widget-head"><div><p class="eyebrow">Obiettivo e streak</p><h2>Il tuo fuoco</h2></div><div class="study-widget-actions"><button type="button" class="secondary-btn small-btn" data-study-leaderboard>🏆 Classifica</button><button type="button" class="secondary-btn small-btn" data-study-settings>⚙ Obiettivo</button></div></div><div class="study-widget-body"><div class="study-flame-wrap"><div class="study-fire" data-study-fire aria-label="Fuoco streak">🔥</div><strong data-study-streak>0</strong><span data-study-streak-label>giorni</span></div><div class="study-widget-copy"><strong data-study-today>Imposta il tuo primo obiettivo.</strong><span data-study-copy>Quando raggiungi la quota del giorno, il fuoco cresce e la streak aumenta.</span><div class="study-mini-progress"><span data-study-progress-bar></span></div><span class="study-mini-progress-text" data-study-progress-text>—</span></div></div>`;
+      widget.innerHTML = `<div class="study-widget-head"><div><p class="eyebrow">Obiettivo e streak</p><h2>Il tuo fuoco</h2></div><div class="study-widget-actions"><button type="button" class="secondary-btn small-btn" data-study-leaderboard>🏆 Classifica</button><button type="button" class="secondary-btn small-btn" data-study-settings>⚙ Obiettivo</button></div></div><div class="study-widget-body"><div class="study-flame-wrap"><div class="study-fire-box"><div class="study-fire" data-study-fire aria-label="Fuoco streak">🔥</div>${countdownHtml()}</div><strong data-study-streak>0</strong><span data-study-streak-label>giorni</span></div><div class="study-widget-copy"><strong data-study-today>Imposta il tuo primo obiettivo.</strong><span data-study-copy>Quando raggiungi la quota del giorno, il fuoco cresce e la streak aumenta.</span><div class="study-mini-progress"><span data-study-progress-bar></span></div><span class="study-mini-progress-text" data-study-progress-text>—</span></div></div>`;
       host.prepend(widget);
       widget.querySelector('[data-study-settings]').addEventListener('click', async () => {
         makeSetupModal(mountCourse, await readGoal(mountCourse));
@@ -657,6 +697,10 @@
       syncLeaderboardOnce(goal);
     }
     widget.dataset.streakState = goal ? streakState(goal) : 'none';
+    const running = Boolean(goal) && goal.lastMetDate !== todayKey();
+    widget.querySelector('[data-study-countdown]').hidden = !running;
+    if (running) startCountdowns();
+    tickCountdowns();
   }
 
   async function refreshPortalWidget(seq) {
@@ -677,9 +721,12 @@
       const line = !goal ? 'obiettivo non impostato'
         : goal.lastMetDate === today ? `✓ obiettivo di oggi fatto (${goal.dailyTarget} ${c.unit})`
         : `oggi ${Math.min(count, goal.dailyTarget)} / ${goal.dailyTarget} ${c.unit} · ne mancano ${Math.max(0, goal.dailyTarget - count)}`;
-      return `<div class="study-portal-tile" data-course="${course}"><div class="study-fire" data-level="${flameLevel(streak)}" aria-hidden="true">🔥</div><div class="study-portal-text"><b>${escapeHtml(c.label)}</b><span class="study-portal-streak"><strong>${streak}</strong> ${streak === 1 ? 'giorno' : 'giorni'}</span><small>${escapeHtml(line)}</small></div></div>`;
+      const running = Boolean(goal) && goal.lastMetDate !== today;
+      return `<div class="study-portal-tile${running ? ' is-running' : ''}" data-course="${course}"><div class="study-fire-box"><div class="study-fire" data-level="${flameLevel(streak)}" aria-hidden="true">🔥</div>${running ? countdownHtml('is-small') : ''}</div><div class="study-portal-text"><b>${escapeHtml(c.label)}</b><span class="study-portal-streak"><strong>${streak}</strong> ${streak === 1 ? 'giorno' : 'giorni'}</span><small>${escapeHtml(line)}</small></div></div>`;
     }).join('');
     widget.classList.remove('hidden');
+    if (widget.querySelector('[data-study-countdown]')) startCountdowns();
+    tickCountdowns();
   }
 
   async function showLeaderboard(course = mountCourse, initialTab = 'streak') {
@@ -760,6 +807,6 @@
     config: COURSE_CONFIG,
     // Usati dal simulatore streak nel pannello admin: stessa identica funzione di transizione
     // del tracciamento reale, cosi il test verifica la logica vera e non una copia.
-    test: { nextStreakState, liveStreakAt, missedDaysAt, daysBetween, todayKey, offsetKey, flameLevel, timeLeftToday }
+    test: { nextStreakState, liveStreakAt, missedDaysAt, daysBetween, todayKey, offsetKey, flameLevel, timeLeftToday, secondsToMidnight }
   };
 })();

@@ -48,8 +48,12 @@ Firebase Console → Hosting → Aggiungi un altro sito).
 
 ## Notifiche push
 
-Gli utenti le attivano dal riquadro **Notifiche** (portale e home dei corsi); su iPhone e iPad funzionano solo
-dall'app aggiunta alla schermata Home. Il dispositivo si salva in `users/{uid}.push`.
+Al primo accesso dopo l'aggiornamento compare una volta il popup "Abbiamo aggiunto le notifiche"; poi si
+gestiscono da **Account** (attiva/disattiva, promemoria streak). Su iPhone e iPad funzionano solo dall'app
+aggiunta alla schermata Home. Il dispositivo si salva in `users/{uid}.push`.
+
+In **Account** ci sono anche nome e cognome (aggiornano profilo e classifiche) e la password: si cambia
+scrivendo quella attuale, oppure con l'email di reimpostazione; chi entra con Google può crearne una.
 
 Il lavoro **Notifiche** (`.github/workflows/notifiche.yml`, codice in `notifiche/`) gira da solo ogni 10 minuti
 circa con lo stesso secret `FIREBASE_SERVICE_ACCOUNT` e:
