@@ -35,7 +35,7 @@
 
   function bindElements() {
     [
-      'themeToggle','logoutBtn','adminGate','gateTitle','gateText','gateStatus','loginControls','emailInput','passwordInput','loginBtn','googleBtn','adminMessage','adminMain','adminStats','courseStatsToggle','adminTabs','requestsSection','usersSection','announcementsSection','refreshRequestsBtn','accountRequestsList','refreshUsersBtn','userSearchInput','usersList','userDetail','announcementScope','announcementTitle','announcementMessage','createAnnouncementBtn','refreshAnnouncementsBtn','announcementsList','coursesSection','refreshCoursesBtn','courseSettingsList','streakSection','streakUserSelect','streakCourseSelect','streakInspectBtn','streakInspectResult','simFireIcon','simStreakValue','simDayLabel','simSummary','simMetBtn','simSkipBtn','simResetBtn','simLogBody','fadSection','promoSection','fadVideoTitleInput','fadVideoMinutesInput','fadAddVideoBtn','refreshFadBtn','fadVideoList','fadVideoTotal','fadMinutesTotal','toast'
+      'themeToggle','logoutBtn','adminGate','gateTitle','gateText','gateStatus','loginControls','emailInput','passwordInput','loginBtn','googleBtn','adminMessage','adminMain','adminStats','courseStatsToggle','adminTabs','requestsSection','usersSection','announcementsSection','refreshRequestsBtn','accountRequestsList','refreshUsersBtn','userSearchInput','usersList','userDetail','announcementScope','announcementTitle','announcementMessage','createAnnouncementBtn','refreshAnnouncementsBtn','announcementsList','coursesSection','refreshCoursesBtn','courseSettingsList','streakSection','streakUserSelect','streakCourseSelect','streakInspectBtn','streakInspectResult','simFireIcon','simStreakValue','simDayLabel','simSummary','simMetBtn','simSkipBtn','simResetBtn','simLogBody','fadSection','promoSection','notificationsSection','fadVideoTitleInput','fadVideoMinutesInput','fadAddVideoBtn','refreshFadBtn','fadVideoList','fadVideoTotal','fadMinutesTotal','toast'
     ].forEach((id) => { els[id] = document.getElementById(id); });
   }
 
@@ -183,6 +183,7 @@
     els.streakSection?.classList.toggle('hidden', name !== 'streak');
     els.fadSection?.classList.toggle('hidden', name !== 'fad');
     els.promoSection?.classList.toggle('hidden', name !== 'promo');
+    els.notificationsSection?.classList.toggle('hidden', name !== 'notifications');
   }
 
   async function loadAccountRequests() {
@@ -366,16 +367,18 @@
       const g = snap.data() || {};
       const today = window.QuizStudyTracker?.test?.todayKey?.() || '';
       const live = window.QuizStudyTracker?.test?.liveStreakAt?.(g, today) ?? g.streak ?? 0;
+      const missed = window.QuizStudyTracker?.test?.missedDaysAt?.(g, today) ?? 0;
       const alive = live > 0;
       els.streakInspectResult.innerHTML = `
         <div class="stats-grid compact-stats" style="margin-top:10px;">
-          <div class="stat-card"><strong>${Number(g.streak || 0)}</strong><span>Streak salvata</span></div>
-          <div class="stat-card"><strong>${live}</strong><span>Streak dal vivo ${alive ? '(accesa)' : '(spenta)'}</span></div>
+          <div class="stat-card"><strong>${Number(g.streak || 0)}</strong><span>Streak all’ultimo giorno riuscito</span></div>
+          <div class="stat-card"><strong>${live}</strong><span>Streak reale oggi ${alive ? '(accesa)' : '(spenta)'}</span></div>
+          <div class="stat-card"><strong>${missed}</strong><span>Giorni saltati da allora (−1 ciascuno)</span></div>
           <div class="stat-card"><strong>${Number(g.bestStreak || 0)}</strong><span>Record</span></div>
           <div class="stat-card"><strong>${Number(g.totalGoalDays || 0)}</strong><span>Giorni obiettivo totali</span></div>
         </div>
         <p class="request-meta" style="margin-top:10px;">Ultimo giorno riuscito: <strong>${escapeHtml(g.lastMetDate || '—')}</strong> · Obiettivo giornaliero: ${Number(g.dailyTarget || 0)} ${escapeHtml(g.unit || '')} · Oggi (${escapeHtml(today)}): ${Number(g.dailyCounts?.[today] || 0)} fatte.</p>
-        ${!alive && g.lastMetDate ? '<p class="review-warning">La streak salvata e piu vecchia di ieri: sul sito viene mostrata come spenta (0), correttamente.</p>' : ''}
+        ${missed > 0 ? `<p class="review-warning">Dall’ultimo giorno riuscito sono passati ${missed} ${missed === 1 ? 'giorno saltato' : 'giorni saltati'}: sul sito e in classifica la streak vale ${live} (${Number(g.streak || 0)} − ${missed}).</p>` : ''}
       `;
     } catch (error) {
       els.streakInspectResult.innerHTML = `<p class="message">Lettura non riuscita: ${escapeHtml(error.message)}</p>`;
@@ -395,10 +398,18 @@
     return window.QuizStudyTracker.test.offsetKey('2025-01-01', dayNumber);
   }
 
+  // Valore mostrato dopo il giorno simulato = streak reale all'inizio del giorno dopo
+  function simShownStreak() {
+    const test = window.QuizStudyTracker?.test;
+    if (!test || !simDay) return 0;
+    return test.liveStreakAt(simState, simDateKey(simDay + 1));
+  }
+
   function renderSimulator() {
     if (!els.simStreakValue) return;
-    els.simStreakValue.textContent = String(simState.streak);
-    els.simFireIcon.dataset.level = String(Math.min(10, simState.streak));
+    const shown = simShownStreak();
+    els.simStreakValue.textContent = String(shown);
+    els.simFireIcon.dataset.level = String(Math.min(10, shown));
     els.simDayLabel.textContent = `Giorno simulato: ${simDay}`;
     els.simSummary.textContent = `Record: ${simState.bestStreak} · Giorni totali riusciti: ${simState.totalGoalDays} · Ultimo giorno riuscito: ${simState.lastMetDate || '—'}`;
     els.simLogBody.innerHTML = simLog.slice().reverse().map((row) => `
@@ -414,14 +425,15 @@
   function simulateDay(met) {
     const test = window.QuizStudyTracker?.test;
     if (!test) { showToast('Simulatore non disponibile su questa pagina.'); return; }
+    const before = simShownStreak();
     simDay += 1;
     const key = simDateKey(simDay);
-    const before = simState.streak;
     simState = test.nextStreakState(simState, key, met);
+    const after = test.liveStreakAt(simState, simDateKey(simDay + 1));
     let note = '';
-    if (!met) note = simState.streak === before ? 'Streak invariata (si spegnera se salti anche domani).' : '';
-    else note = simState.streak === 1 && before > 0 ? 'Giorno precedente saltato: riparte da 1.' : (simState.streak > before ? 'Continua la serie: +1.' : 'Prima streak.');
-    simLog.push({ day: simDay, met, streak: simState.streak, bestStreak: simState.bestStreak, note });
+    if (met) note = before === 0 ? 'Fuoco acceso: +1.' : 'Obiettivo raggiunto: +1.';
+    else note = before > 0 ? 'Giorno saltato: −1.' : 'Giorno saltato (streak già a zero).';
+    simLog.push({ day: simDay, met, streak: after, bestStreak: simState.bestStreak, note });
     renderSimulator();
   }
 
@@ -811,23 +823,9 @@
     await loadAnnouncements();
   }
 
-  async function loadAnnouncements() {
-    const snap = await db().collection('announcements').where('active', '==', true).limit(50).get();
-    const list = [];
-    snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
-    list.sort((a, b) => Number(b.createdAt?.seconds || 0) - Number(a.createdAt?.seconds || 0));
-    if (!list.length) {
-      els.announcementsList.innerHTML = '<p class="message">Nessun annuncio attivo.</p>';
-      return;
-    }
-    els.announcementsList.innerHTML = list.map((a) => `
-      <div class="announcement-admin-card">
-        <div><strong>${escapeHtml(a.title || 'Annuncio')}</strong><p>${escapeHtml(a.message || '')}</p><small>${escapeHtml(announcementScopeLabel(a))} · ${formatDateFromTs(a.createdAt)}</small></div>
-        <button class="danger-btn small-btn" type="button" data-delete-announcement="${escapeHtml(a.id)}">Disattiva</button>
-      </div>
-    `).join('');
-    els.announcementsList.querySelectorAll('[data-delete-announcement]').forEach((btn) => btn.addEventListener('click', () => deactivateAnnouncement(btn.dataset.deleteAnnouncement)));
-  }
+  // Annunci: composer ed elenco sono in announcements-admin.js
+  async function loadAnnouncements() { return window.QuizAnnouncementsAdmin?.reload?.(); }
+
 
   async function deactivateAnnouncement(id) {
     await db().collection('announcements').doc(id).set({ active: false, updatedAt: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: currentUser.uid }, { merge: true });

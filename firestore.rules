@@ -120,6 +120,21 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (signedIn() && resource.data.active == true && (resource.data.scope == 'global' || resource.data.scope in ['istruttore', 'bagnino', 'arte'] || resource.data.targetUid == request.auth.uid));
       allow create, update, delete: if isAdmin();
+
+      // "Ho letto" degli annunci con conferma OK: ognuno scrive solo la propria
+      match /acks/{userId} {
+        allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
+        allow create, update: if signedIn() && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['uid', 'name', 'at', 'rev'])
+          && request.resource.data.uid == userId
+          && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 120));
+        allow delete: if isAdmin();
+      }
+    }
+
+    // Notifiche push messe in coda dall'admin: le invia il lavoro "Notifiche" su GitHub
+    match /pushQueue/{pushId} {
+      allow read, write: if isAdmin();
     }
 
     match /leaderboards/{leaderboardId} {

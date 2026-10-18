@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="study-goal.css" />
   <link rel="stylesheet" href="promo.css" />
+  <link rel="stylesheet" href="announcements.css" />
 </head>
 <body class="course-portal">
   <a class="skip-link" href="#authCard">Vai al contenuto</a>
@@ -77,9 +78,11 @@
         <p class="kicker">Quiz Nuoto</p>
         <h1>I tuoi corsi</h1>
       </header>
+      <div id="announcementsSlot" hidden></div>
       <div id="promoSlot" hidden></div>
       <div id="courseAccessStats" class="hidden"></div>
       <div id="studyGoalSlot" class="portal-streak"></div>
+      <div id="pushSlot"></div>
 
       <section class="course-grid" aria-label="Corsi disponibili"><div>
         <article id="courseIstruttoreCard" class="course-card" data-course="istruttore">
@@ -165,11 +168,15 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="gate.js"></script>
   <script src="account-actions.js"></script>
   <script src="study-goal.js"></script>
   <script src="portal.js"></script>
   <script src="shell.js"></script>
   <script src="promo.js"></script>
+  <script src="qr.js"></script>
+  <script src="announcements.js"></script>
+  <script src="push.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

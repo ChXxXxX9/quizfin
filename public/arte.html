@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="study-goal.css" />
   <link rel="stylesheet" href="promo.css" />
+  <link rel="stylesheet" href="announcements.css" />
 </head>
 <body class="course-arte has-nav" data-view="none">
   <a class="skip-link" href="#arteMain">Vai al contenuto</a>
@@ -53,6 +54,8 @@
           <h1 id="homeTitle">Arte · Quinto Liceo</h1>
         </header>
 
+        <div id="announcementsSlot" hidden></div>
+
         <div class="home-top">
           <section class="hero" aria-labelledby="heroTitle">
             <div class="dial" data-dial-source="#homeStats .stat-card strong" role="img" aria-label="Opere completate almeno una volta">
@@ -69,6 +72,8 @@
           </section>
           <div id="studyGoalSlot"></div>
         </div>
+
+        <div id="pushSlot"></div>
 
         <section class="section" aria-labelledby="secTrain">
           <div class="section-head"><h2 id="secTrain">Allenati</h2></div>
@@ -270,10 +275,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="gate.js"></script>
   <script src="study-goal.js"></script>
   <script src="arte_works.js"></script>
   <script src="app_arte.js"></script>
   <script src="shell.js"></script>
   <script src="promo.js"></script>
+  <script src="qr.js"></script>
+  <script src="announcements.js"></script>
+  <script src="push.js"></script>
 </body>
 </html>

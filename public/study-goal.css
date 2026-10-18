@@ -116,3 +116,13 @@
     .study-rank-row { grid-template-columns: 24px 26px minmax(0, 1fr) auto; padding: 9px 12px; }
   }
 }
+
+@layer components {
+  /* Stato di oggi sotto al fuoco: in pericolo (oggi da fare) o al sicuro */
+  .study-goal-widget[data-streak-state="risk"] [data-study-copy] { color: var(--warn); font-weight: 700; }
+  .study-goal-widget[data-streak-state="done"] [data-study-copy] { color: var(--ok); font-weight: 700; }
+  /* Classifica: andamento di oggi */
+  .study-rank-trend { font-weight: 700; color: var(--ink-2); }
+  .study-rank-trend.up { color: var(--ok); }
+  .study-rank-trend.down { color: var(--danger); }
+}

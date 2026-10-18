@@ -69,6 +69,7 @@
   }
 
   async function renderAccountState(){
+    window.QuizGate?.hide();
     const access = getAccess();
     if (!currentUser) return showLoginGate('Accesso richiesto','Accedi oppure invia una richiesta account scegliendo il corso che ti serve.','Login');
 
@@ -84,11 +85,15 @@
     }
 
     const site = getCourseGlobalState('site');
-    if (site.maintenance) {
-      return showStatusGate('Sito in manutenzione', `Il sito è temporaneamente in manutenzione.${site.maintenanceMessage ? `<br>${escapeHtml(site.maintenanceMessage)}` : ''}<br>Riprova più tardi.`, 'Manutenzione', { state: 'banned' });
-    }
-    if (site.blocked) {
-      return showStatusGate('Sito non disponibile', `L’accesso al sito è stato bloccato per tutti gli utenti.${site.blockReason ? `<br><strong>Motivo:</strong> ${escapeHtml(site.blockReason)}` : ''}`, 'Bloccato', { state: 'banned' });
+    // Manutenzione o blocco di tutto il sito: schermata dedicata, senza lo stato della richiesta account
+    if (site.maintenance || site.blocked) {
+      els.authCard.classList.add('hidden');
+      els.mainContent.classList.add('hidden');
+      els.logoutBtn?.classList.remove('hidden');
+      window.QuizGate?.show(site.maintenance
+        ? { kind: 'maintenance', scope: 'site', reason: site.maintenanceMessage }
+        : { kind: 'blocked', scope: 'site', reason: site.blockReason });
+      return;
     }
 
     if (access.banned) {
@@ -486,57 +491,9 @@
   }
 
 
-  async function loadPortalAnnouncements(){
-    if (!window.FirebaseQuiz?.configured || !currentUser || !getAllowedCourses().length) return;
-    try {
-      const [globalSnap, userSnap] = await Promise.all([
-        db().collection('announcements').where('active', '==', true).where('scope', '==', 'global').limit(20).get(),
-        db().collection('announcements').where('active', '==', true).where('scope', '==', 'user').where('targetUid', '==', currentUser.uid).limit(20).get()
-      ]);
-      const items = [];
-      globalSnap.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
-      userSnap.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
-      if (!items.length) return;
-      items.sort((a, b) => Number(b.createdAt?.seconds || 0) - Number(a.createdAt?.seconds || 0));
-      showAnnouncementPopup(items, 'portal');
-    } catch (error) {
-      console.warn('Annunci portale non caricati:', error);
-    }
-  }
+  // Annunci: li carica e li mostra announcements.js (popup, banner, schermo intero, conferme)
+  function loadPortalAnnouncements(){ /* gestiti da announcements.js */ }
 
-  function showAnnouncementPopup(items, area){
-    const storageKey = `quizNuotoSeenAnnouncements:${currentUser.uid}:${area || 'portal'}`;
-    let seen = [];
-    try { seen = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch { seen = []; }
-    const unseen = items.filter((item) => !seen.includes(item.id));
-    if (!unseen.length) return;
-    const modal = document.createElement('div');
-    modal.className = 'modal site-dialog-modal';
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    const main = unseen[0] || {};
-    modal.innerHTML = `
-      <div class="modal-card account-request-card site-dialog-card announcement-dialog-card">
-        <div class="modal-head">
-          <div>
-            <p class="eyebrow">Avviso</p>
-            <h3>${escapeHtml(main.title || 'Annuncio')}</h3>
-          </div>
-          <button class="icon-btn" type="button" data-close-announcement aria-label="Chiudi">×</button>
-        </div>
-        <div class="announcement-popup-list">
-          ${unseen.map((item, index) => `<div class="announcement-popup-item ${index === 0 ? 'featured' : ''}">${index === 0 ? '' : `<strong>${escapeHtml(item.title || 'Annuncio')}</strong>`}<p>${escapeHtml(item.message || '')}</p></div>`).join('')}
-        </div>
-        <div class="site-dialog-actions"><button class="primary-btn" type="button" data-close-announcement>Ho capito</button></div>
-      </div>`;
-    const close = () => {
-      const nextSeen = [...new Set([...seen, ...unseen.map((item) => item.id)])];
-      localStorage.setItem(storageKey, JSON.stringify(nextSeen));
-      modal.remove();
-    };
-    modal.querySelectorAll('[data-close-announcement]').forEach((btn) => btn.addEventListener('click', close));
-    document.body.appendChild(modal);
-  }
 
   function showSiteNotice({ eyebrow = 'Avviso', title = 'Avviso', message = '', buttonText = 'Ho capito', tone = '' } = {}){
     const modal = document.createElement('div');

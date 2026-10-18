@@ -1,0 +1,78 @@
+name: Notifiche
+
+# Ogni 10 minuti circa:
+# 1) manda le notifiche che l'admin ha messo in coda dal pannello (sezione Notifiche);
+# 2) agli orari scelti dall'admin, avvisa chi sta per perdere la streak.
+# I minuti non sono "tondi" apposta: allo scoccare dell'ora GitHub è più carico e ritarda.
+on:
+  schedule:
+    - cron: '4,14,24,34,44,54 * * * *'
+  workflow_dispatch:
+    inputs:
+      promemoria_ora:
+        description: 'Manda adesso anche il promemoria streak (a chi non ha ancora fatto l''obiettivo di oggi)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # per il "segno di vita"
+  actions: write    # per riattivare il lavoro programmato
+
+concurrency:
+  group: notifiche
+  cancel-in-progress: false
+
+jobs:
+  invia:
+    name: Invia le notifiche
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Configurazione presente?
+        id: config
+        env:
+          ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$ACCOUNT" ]; then
+            echo "::notice::Manca il secret FIREBASE_SERVICE_ACCOUNT: le notifiche partono appena viene aggiunto."
+            echo "pronto=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "pronto=si" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Manda notifiche e promemoria
+        if: ${{ steps.config.outputs.pronto == 'si' }}
+        working-directory: notifiche
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          SITO_URL: ${{ vars.SITO_URL }}
+        run: node src/main.js ${{ inputs.promemoria_ora && '--promemoria-ora' || '' }}
+
+      # Nei repository pubblici GitHub spegne i lavori programmati dopo 60 giorni senza attività.
+      # Se l'ultimo commit ha più di 30 giorni ne facciamo uno piccolo; una volta a settimana
+      # riattiviamo anche il lavoro via API. Così le notifiche non si fermano mai.
+      - name: Segno di vita
+        if: ${{ always() && github.event_name == 'schedule' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ultimo=$(git log -1 --format=%ct)
+          adesso=$(date +%s)
+          if [ $(( adesso - ultimo )) -gt $(( 30 * 86400 )) ]; then
+            mkdir -p .github/segno-di-vita
+            date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/segno-di-vita/ultimo.txt
+            git config user.name "quiznuoto-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/segno-di-vita/ultimo.txt
+            git commit -m "Segno di vita automatico"
+            git push
+          fi
+          if [ "$(date -u +%u%H)" = "103" ]; then
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/notifiche.yml/enable" || true
+          fi

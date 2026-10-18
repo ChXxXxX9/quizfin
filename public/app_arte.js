@@ -75,22 +75,14 @@
         if (!isAdmin) {
           const courseSettingsSnap = await fetchCourseSettings();
           const siteSnap = FEATURE_SETTINGS.site || {};
-          if (siteSnap.maintenance) {
-            setGate('Sito in manutenzione', siteSnap.maintenanceMessage || 'Il sito è temporaneamente in manutenzione. Riprova più tardi.');
-            return;
-          }
-          if (siteSnap.blocked) {
-            setGate('Sito non disponibile', `L’accesso al sito è stato bloccato per tutti gli utenti.${siteSnap.blockReason ? ' Motivo: ' + siteSnap.blockReason : ''}`);
-            return;
-          }
-          if (courseSettingsSnap.maintenance) {
-            setGate('Corso in manutenzione', courseSettingsSnap.maintenanceMessage || 'Il corso è temporaneamente in manutenzione. Riprova più tardi.');
-            return;
-          }
-          if (courseSettingsSnap.blocked || courseSettingsSnap.hidden) {
-            setGate('Corso non disponibile', `L’accesso al corso Arte è momentaneamente sospeso per tutti gli utenti.${courseSettingsSnap.blockReason ? ' Motivo: ' + courseSettingsSnap.blockReason : ''}`);
-            return;
-          }
+          const systemGate = (kind, scope, title, reason) => {
+            setGate(title, reason || '');
+            window.QuizGate?.show({ kind, scope, reason, courseLabel: 'Arte · Quinto Liceo' });
+          };
+          if (siteSnap.maintenance) { systemGate('maintenance', 'site', 'Sito in manutenzione', siteSnap.maintenanceMessage); return; }
+          if (siteSnap.blocked) { systemGate('blocked', 'site', 'Sito non disponibile', siteSnap.blockReason); return; }
+          if (courseSettingsSnap.maintenance) { systemGate('maintenance', 'course', 'Corso in manutenzione', courseSettingsSnap.maintenanceMessage); return; }
+          if (courseSettingsSnap.blocked || courseSettingsSnap.hidden) { systemGate('blocked', 'course', 'Corso non disponibile', courseSettingsSnap.blockReason); return; }
         }
 
         accessGranted = isAdmin || access.courseAccess?.arte === true;

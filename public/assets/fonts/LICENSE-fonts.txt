@@ -1,7 +1,6 @@
 Caratteri tipografici inclusi nel sito
 
 TeX Gyre Adventor (adventor-regular.woff, adventor-bold.woff)
-TeX Gyre Schola (schola-regular.woff, schola-bold.woff, schola-italic.woff)
 
 Copyright (c) GUST e-foundry. Distribuiti con la GUST Font License
 (http://www.gust.org.pl/projects/e-foundry/licenses), che consente uso,

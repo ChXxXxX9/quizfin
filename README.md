@@ -10,7 +10,8 @@ public/                  il sito (è l'unica cartella che finisce online)
 firestore.rules          regole del database: chi può leggere e scrivere cosa
 firebase.json            impostazioni di Firebase Hosting (sito "quiznuoto", cache, intestazioni)
 test-regole/             prove automatiche delle regole (emulatore, nessun dato vero)
-.github/workflows/       pubblicazione automatica
+notifiche/               invio delle notifiche push (gira su GitHub ogni 10 minuti circa)
+.github/workflows/       pubblicazione automatica e invio notifiche
 dati/                    banca domande sorgente, script e report di validazione (non pubblicati)
 ```
 
@@ -22,7 +23,7 @@ dell'admin.
 
 ## Pubblicazione automatica
 
-A ogni modifica su `main` di `public/`, `firestore.rules`, `firebase.json` o `test-regole/`, GitHub Actions:
+A ogni modifica su `main` di `public/`, `firestore.rules`, `firebase.json`, `test-regole/` o `notifiche/`, GitHub Actions:
 
 1. prova le regole con l'emulatore di Firestore usando il vero codice del sito;
 2. se le prove passano, pubblica il sito su quiznuoto.web.app e aggiorna le regole del database.
@@ -44,6 +45,27 @@ fallite: Actions → "Pubblica Quiz Nuoto" → Run workflow → spunta "Pubblica
 
 Il sito `quiznuoto` viene creato da solo al primo giro se non esiste (si può anche creare a mano:
 Firebase Console → Hosting → Aggiungi un altro sito).
+
+## Notifiche push
+
+Gli utenti le attivano dal riquadro **Notifiche** (portale e home dei corsi); su iPhone e iPad funzionano solo
+dall'app aggiunta alla schermata Home. Il dispositivo si salva in `users/{uid}.push`.
+
+Il lavoro **Notifiche** (`.github/workflows/notifiche.yml`, codice in `notifiche/`) gira da solo ogni 10 minuti
+circa con lo stesso secret `FIREBASE_SERVICE_ACCOUNT` e:
+
+- manda le notifiche che l'admin mette in coda dal pannello (sezione **Notifiche**: a tutti, a un corso o a un
+  utente) — collezione `pushQueue`;
+- agli orari scelti dall'admin (predefiniti 18:00 e 21:00, ora italiana) avvisa chi ha un obiettivo e non l'ha
+  ancora raggiunto oggi: quante domande mancano, quanto tempo resta fino a mezzanotte e a quanto scende la
+  streak se salta il giorno;
+- toglie da solo i dispositivi non più validi.
+
+Per mandare subito senza aspettare: Actions → "Notifiche" → **Run workflow** (con la spunta parte anche il
+promemoria streak). GitHub a volte ritarda i lavori programmati di qualche minuto: è normale.
+
+Se l'invio dà errore di permessi, in [Google Cloud → API](https://console.cloud.google.com/apis/library/fcm.googleapis.com?project=quiz-fin)
+controlla che **Firebase Cloud Messaging API** sia attiva. Prove della logica: `npm --prefix notifiche test`.
 
 ## Aggiornare il sito
 

@@ -1,0 +1,12 @@
+{
+  "name": "quiz-nuoto-notifiche",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Invia le notifiche push di Quiz Nuoto: avvisi dell'admin e promemoria streak.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node --test \"test/*.test.js\""
+  }
+}

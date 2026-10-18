@@ -63,28 +63,53 @@
     base.setDate(base.getDate() + offsetDays);
     return keyFromDate(base);
   }
-  // Unica implementazione della transizione di streak: usata sia dal tracciamento reale
-  // (recordActivity) sia dal simulatore admin, cosi le due logiche non possono divergere.
-  // met=true quando il traguardo giornaliero e stato raggiunto in quel giorno (dateKey).
+  // Giorni di calendario tra due chiavi YYYY-MM-DD (b - a), senza problemi di ora legale.
+  function daysBetween(a, b) {
+    const pa = String(a || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const pb = String(b || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!pa || !pb) return 0;
+    const ua = Date.UTC(Number(pa[1]), Number(pa[2]) - 1, Number(pa[3]));
+    const ub = Date.UTC(Number(pb[1]), Number(pb[2]) - 1, Number(pb[3]));
+    return Math.round((ub - ua) / 86400000);
+  }
+  // REGOLA DELLA STREAK (unica implementazione, usata da sito, classifica e simulatore admin):
+  //  - ogni giorno in cui raggiungi l'obiettivo: +1;
+  //  - ogni giorno intero saltato: -1 (mai sotto zero). Es.: 3 → salti un giorno → 2.
+  // Nel documento si salvano la streak al momento dell'ultimo giorno riuscito (lastMetDate);
+  // i giorni saltati dopo si scalano quando si legge, così il valore è sempre reale
+  // anche per chi non apre il sito (e la classifica scende da sola).
+  function missedDaysAt(state, dateKey) {
+    if (!state?.lastMetDate) return 0;
+    return Math.max(0, daysBetween(state.lastMetDate, dateKey) - 1);
+  }
+  // Streak valida nel giorno dateKey (il giorno in corso non conta ancora come saltato).
+  function liveStreakAt(state, dateKey) {
+    if (!state || !state.lastMetDate) return 0;
+    const streak = Math.max(0, Number(state.streak || 0));
+    if (state.lastMetDate >= dateKey) return streak;
+    return Math.max(0, streak - missedDaysAt(state, dateKey));
+  }
+  // met=true quando il traguardo giornaliero è stato raggiunto nel giorno dateKey.
   function nextStreakState(prevState, dateKey, met) {
     let streak = Number(prevState?.streak || 0);
     let bestStreak = Number(prevState?.bestStreak || 0);
     let totalGoalDays = Number(prevState?.totalGoalDays || 0);
     let lastMetDate = prevState?.lastMetDate || null;
-    if (met) {
-      const previousDay = offsetKey(dateKey, -1);
-      streak = lastMetDate === previousDay ? Math.max(1, streak + 1) : 1;
+    if (met && (!lastMetDate || dateKey > lastMetDate)) {
+      streak = liveStreakAt(prevState, dateKey) + 1;
       lastMetDate = dateKey;
       totalGoalDays += 1;
       bestStreak = Math.max(bestStreak, streak);
     }
     return { streak, bestStreak, totalGoalDays, lastMetDate };
   }
-  // Streak "dal vivo": 0 se l'ultimo giorno riuscito non e ne oggi ne ieri (rispetto a dateKey).
-  function liveStreakAt(state, dateKey) {
-    if (!state) return 0;
-    if (state.lastMetDate === dateKey || state.lastMetDate === offsetKey(dateKey, -1)) return state.streak || 0;
-    return 0;
+  // Tempo che resta fino a mezzanotte (fine del giorno per l'obiettivo).
+  function timeLeftToday(now = new Date()) {
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+    const minutes = Math.max(0, Math.round((end - now) / 60000));
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return { minutes, label: h ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min` };
   }
   function parseLocalDate(value) {
     if (!value) return null;
@@ -172,8 +197,8 @@
     return currentUser?.displayName?.trim() || (currentUser?.email ? currentUser.email.split('@')[0] : 'Utente');
   }
 
-  // Nella classifica salviamo la streak grezza + lastMetDate: chi legge calcola la streak "viva"
-  // (0 se l'ultimo giorno riuscito non e oggi ne ieri), quindi chi smette esce da solo dalla classifica.
+  // Nella classifica salviamo la streak grezza + lastMetDate: chi legge calcola la streak reale
+  // (−1 per ogni giorno saltato), quindi chi smette scende da solo fino a uscire dalla classifica.
   async function writeLeaderboard(goal) {
     if (!currentUser || !db() || !goal?.courseId || !goal.lastMetDate) return;
     try {
@@ -213,13 +238,14 @@
     if (!db() || !currentUser) return [];
     const today = todayKey();
     try {
-      const snap = await boardRef(course).where('lastMetDate', '>=', offsetKey(today, -1)).limit(limit).get();
+      // Tutti quelli con una streak salvata: la streak reale (con i giorni saltati scalati) si calcola qui
+      const snap = await boardRef(course).where('streak', '>', 0).limit(limit).get();
       const rows = [];
       snap.forEach((doc) => rows.push(doc.data() || {}));
       return rows
-        .map((row) => ({ ...row, live: liveStreakAt(row, today) }))
+        .map((row) => ({ ...row, live: liveStreakAt(row, today), missed: missedDaysAt(row, today), doneToday: row.lastMetDate === today }))
         .filter((row) => row.live > 0)
-        .sort((a, b) => b.live - a.live || Number(b.bestStreak || 0) - Number(a.bestStreak || 0) || Number(b.totalGoalDays || 0) - Number(a.totalGoalDays || 0));
+        .sort((a, b) => b.live - a.live || Number(b.doneToday) - Number(a.doneToday) || Number(b.bestStreak || 0) - Number(a.bestStreak || 0) || Number(b.totalGoalDays || 0) - Number(a.totalGoalDays || 0));
     } catch (error) {
       console.warn('Lettura classifica non riuscita:', error);
       return [];
@@ -522,6 +548,34 @@
     if (!goal) return 0;
     return liveStreakAt(goal, todayKey());
   }
+  // 'done' obiettivo di oggi fatto · 'risk' streak accesa ma oggi ancora da fare · 'start' nessuna streak
+  function streakState(goal) {
+    const today = todayKey();
+    if (!goal) return 'none';
+    if (goal.lastMetDate === today) return 'done';
+    return displayStreak(goal) > 0 ? 'risk' : 'start';
+  }
+  // Frase sotto al fuoco: cosa manca oggi, entro quando, e se la streak è scesa per giorni saltati.
+  function streakStatusText(goal, unit) {
+    const today = todayKey();
+    const live = displayStreak(goal);
+    const done = Number(goal.dailyCounts?.[today] || 0);
+    const missing = Math.max(0, goal.dailyTarget - done);
+    const missed = missedDaysAt(goal, today);
+    const parts = [];
+    if (missed > 0 && Number(goal.streak || 0) > 0) {
+      parts.push(`Hai saltato ${missed === 1 ? '1 giorno' : `${missed} giorni`}: la streak è scesa da ${goal.streak} a ${live}.`);
+    }
+    if (goal.lastMetDate === today) {
+      parts.push(`Obiettivo di oggi fatto: streak al sicuro fino a domani.`);
+    } else {
+      const left = timeLeftToday();
+      parts.push(live > 0
+        ? `Ti mancano ${missing} ${unit} entro mezzanotte (${left.label}): se salti oggi la streak scende a ${live - 1}.`
+        : `Fai ${missing} ${unit} entro mezzanotte (${left.label}) per accendere il fuoco.`);
+    }
+    return parts.join(' ');
+  }
 
   function celebrateMilestone(course, goal) {
     const today = todayKey();
@@ -599,12 +653,10 @@
     const copy = widget.querySelector('[data-study-copy]');
     if (!goal) copy.textContent = 'Scegli il ritmo giornaliero: quando lo raggiungi si accende il fuoco.';
     else {
-      const remaining = Math.max(0, c.total - Number(goal.courseCompletedUnits || 0));
-      copy.textContent = goal.goalMode === 'deadline' && goal.examDate
-        ? `Esame: ${goal.examDate}. Restano circa ${remaining} ${c.unit}.`
-        : `Ritmo scelto: ${goal.dailyTarget} ${c.unit} al giorno · restano circa ${remaining}.`;
+      copy.textContent = streakStatusText(goal, c.unit);
       syncLeaderboardOnce(goal);
     }
+    widget.dataset.streakState = goal ? streakState(goal) : 'none';
   }
 
   async function refreshPortalWidget(seq) {
@@ -622,7 +674,9 @@
       const c = config(course);
       const streak = displayStreak(goal);
       const count = goal ? Number(goal.dailyCounts[today] || 0) : 0;
-      const line = goal ? `oggi ${Math.min(count, goal.dailyTarget)} / ${goal.dailyTarget} ${c.unit}` : 'obiettivo non impostato';
+      const line = !goal ? 'obiettivo non impostato'
+        : goal.lastMetDate === today ? `✓ obiettivo di oggi fatto (${goal.dailyTarget} ${c.unit})`
+        : `oggi ${Math.min(count, goal.dailyTarget)} / ${goal.dailyTarget} ${c.unit} · ne mancano ${Math.max(0, goal.dailyTarget - count)}`;
       return `<div class="study-portal-tile" data-course="${course}"><div class="study-fire" data-level="${flameLevel(streak)}" aria-hidden="true">🔥</div><div class="study-portal-text"><b>${escapeHtml(c.label)}</b><span class="study-portal-streak"><strong>${streak}</strong> ${streak === 1 ? 'giorno' : 'giorni'}</span><small>${escapeHtml(line)}</small></div></div>`;
     }).join('');
     widget.classList.remove('hidden');
@@ -653,7 +707,7 @@
     modal.querySelectorAll('[data-study-leader-close]').forEach((btn) => btn.addEventListener('click', () => modal.remove()));
 
     const captions = {
-      streak: 'Streak di questo corso: chi ha il fuoco acceso oggi o ieri. Nessuna email viene mostrata.',
+      streak: 'Streak reale di questo corso: +1 per ogni giorno con l’obiettivo raggiunto, −1 per ogni giorno saltato. Nessuna email viene mostrata.',
       correct: 'Risposte giuste nel quiz misto di questo corso, per sempre. Nessuna email viene mostrata.'
     };
 
@@ -672,7 +726,12 @@
           ? '<p class="message">Nessun fuoco acceso in questo corso. Raggiungi l’obiettivo di oggi per aprire la classifica.</p>'
           : '<p class="message">Nessuna risposta giusta nel quiz misto ancora registrata per questo corso.</p>';
       } else if (kind === 'streak') {
-        listEl.innerHTML = rows.map((row, i) => `<div class="study-rank-row ${row.uid === currentUser?.uid ? 'current' : ''}"><strong>${i + 1}</strong><span class="study-rank-fire">🔥</span><div><b>${escapeHtml(row.displayName || 'Utente')}</b><small>record ${Number(row.bestStreak || 0)} gg</small></div><em>${row.live} gg</em></div>`).join('');
+        listEl.innerHTML = rows.map((row, i) => {
+          const trend = row.doneToday ? '<span class="study-rank-trend up">✓ oggi</span>'
+            : row.missed > 0 ? `<span class="study-rank-trend down">↓ ${row.missed === 1 ? '1 giorno saltato' : `${row.missed} giorni saltati`}</span>`
+            : '<span class="study-rank-trend">oggi da fare</span>';
+          return `<div class="study-rank-row ${row.uid === currentUser?.uid ? 'current' : ''}"><strong>${i + 1}</strong><span class="study-rank-fire">🔥</span><div><b>${escapeHtml(row.displayName || 'Utente')}</b><small>record ${Number(row.bestStreak || 0)} gg · ${trend}</small></div><em>${row.live} gg</em></div>`;
+        }).join('');
       } else {
         listEl.innerHTML = rows.map((row, i) => `<div class="study-rank-row ${row.uid === currentUser?.uid ? 'current' : ''}"><strong>${i + 1}</strong><span class="study-rank-fire">✅</span><div><b>${escapeHtml(row.displayName || 'Utente')}</b><small>quiz misto</small></div><em>${Number(row.totalCorrect || 0)}</em></div>`).join('');
       }
@@ -701,6 +760,6 @@
     config: COURSE_CONFIG,
     // Usati dal simulatore streak nel pannello admin: stessa identica funzione di transizione
     // del tracciamento reale, cosi il test verifica la logica vera e non una copia.
-    test: { nextStreakState, liveStreakAt, todayKey, offsetKey, flameLevel }
+    test: { nextStreakState, liveStreakAt, missedDaysAt, daysBetween, todayKey, offsetKey, flameLevel, timeLeftToday }
   };
 })();
