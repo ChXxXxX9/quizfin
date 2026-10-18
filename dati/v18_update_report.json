@@ -1,0 +1,17 @@
+{
+  "version": "v18",
+  "changes": [
+    "Registrazione libera rimossa: il pulsante apre Richiesta account",
+    "Modulo richiesta account con nome, cognome, email, piano Base/Gold/Diamond, messaggio e collegamento Google opzionale",
+    "Pannello admin con sezione Richieste account e tab di navigazione",
+    "Netlify Functions per approvare/rigettare richieste con Firebase Admin SDK",
+    "Approvazione crea/aggiorna utente Firebase Auth e invia email con link per impostare password tramite Resend",
+    "Primo accesso con accettazione termini/privacy/disclaimer obbligatoria",
+    "Piani salvati nel profilo utente ma non ancora applicati commercialmente"
+  ],
+  "protected_files_sha256": {
+    "questions.js": "ce2dedfa6f219d589dcce7b6947db339a3aba713cf03c2adf162bef47da0b740",
+    "questions.json": "b98fcfcb963d8283ace4f4cd4447e24ed1722ca7bfd756857ea5de40e074867d",
+    "explanations.js": "e25531f63a61ced3f7c19fb3b47862daebfe5e6f5cbb44e2786a5b933843a176"
+  }
+}

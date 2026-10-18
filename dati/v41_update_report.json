@@ -1,0 +1,11 @@
+{
+  "version": "v41",
+  "title": "Fix gestione corsi Admin",
+  "changes": [
+    "La sezione Corsi ora renderizza subito i tre corsi anche se la lettura Firestore fallisce.",
+    "Gli errori Firestore di lettura e scrittura vengono mostrati direttamente all'Admin con messaggio esplicito.",
+    "I comandi per nascondere, bloccare, sbloccare e mettere in manutenzione i corsi gestiscono gli errori senza lasciare l'interfaccia silenziosa.",
+    "Controllati corso, sessione admin e disponibilità Firestore prima del salvataggio."
+  ],
+  "data_files_touched": false
+}

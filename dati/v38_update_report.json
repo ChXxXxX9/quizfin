@@ -1,0 +1,12 @@
+{
+  "version": "v38",
+  "date": "2026-06-15",
+  "changes": [
+    "Corso Arte evidenziato in alto nella schermata corsi con banner giallo full-width, timer accanto e bottone già colorato.",
+    "Quiz Arte senza feedback immediato: le correzioni vengono mostrate solo a fine sessione.",
+    "Ripristinata funzione Segna opera e quiz Opere segnate per Arte.",
+    "Aggiunta sezione admin per interventi manuali sui progressi: aggiungi completate, sblocca Esamone, assegna obiettivo.",
+    "Aggiornato service worker a v38."
+  ],
+  "dataFilesTouched": false
+}

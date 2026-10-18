@@ -1,0 +1,19 @@
+{
+  "version": "v35",
+  "title": "Apple Moonlitt refinement",
+  "changes": [
+    "Sistema font aggiornato con stack Apple/SF di sistema senza includere file font proprietari",
+    "Bottoni ridisegnati in stile Liquid Glass: capsule, blur, trasparenze, bordi sottili e micro-interazioni",
+    "Pannelli e modali uniformati a materiale glass",
+    "Login, scelta corsi, home corsi, quiz, risultati e admin raffinati graficamente",
+    "Service worker aggiornato a v35"
+  ],
+  "data_files_touched": false,
+  "unchanged_data_files": [
+    "questions.js",
+    "questions.json",
+    "explanations.js",
+    "bagnino_questions.js",
+    "bagnino_explanations.js"
+  ]
+}

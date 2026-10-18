@@ -1,0 +1,11 @@
+IMPORTANTE - FILE CRITICI
+
+Non modificare manualmente questi file senza una nuova validazione completa:
+- questions.js
+- questions.json
+- explanations.js
+
+Questi file contengono banca domande, correttore verificato e spiegazioni personalizzate.
+Ogni modifica errata può far studiare risposte sbagliate agli utenti.
+
+Prima di ogni aggiornamento confrontare gli hash nei file v12_migration_report.json e v13_update_report.json.

@@ -1,0 +1,12 @@
+{
+  "version": "v20",
+  "changes": [
+    "Colore Istruttore cambiato in azzurro",
+    "Colore Assistenti Bagnanti Piscina impostato in rosso",
+    "Schermata post-login ridotta a due grandi banner corso",
+    "Fix richiesta accesso corso da account già esistente: il salvataggio popup non blocca più la richiesta",
+    "Fix scroll modale richiesta account su schermi piccoli",
+    "Regole Firestore aggiornate per noticesSeen/termini senza bloccare richieste corso"
+  ],
+  "dataFilesUntouched": ["questions.js", "questions.json", "explanations.js"]
+}

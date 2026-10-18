@@ -1,0 +1,18 @@
+{
+  "version": "v36",
+  "title": "Corso Arte quinto liceo",
+  "created_from": "QUIZ_NUOTO_v35_apple_moonlitt_refinement.zip",
+  "art_course": {
+    "works": 80,
+    "quiz_size": 10,
+    "deadline": "2026-07-15T23:59:59+02:00",
+    "fields": ["opera", "data", "artista", "corrente", "luogo"],
+    "disabled_place_when_missing": true,
+    "flashcards": false,
+    "spiegami": false,
+    "hint": "utente sceglie un campo e il sistema compila la risposta corretta"
+  },
+  "files_added": ["arte.html", "app_arte.js", "arte_works.js"],
+  "files_updated": ["index.html", "portal.js", "admin.html", "admin.js", "firestore.rules", "service-worker.js", "style.css", "netlify/functions/create-account-request.js", "netlify/functions/approve-account-request.js", "netlify/functions/reject-account-request.js"],
+  "protected_course_data_unchanged": ["questions.js", "questions.json", "explanations.js", "bagnino_questions.js", "bagnino_explanations.js"]
+}

@@ -1,0 +1,11 @@
+{
+  "version": "v28",
+  "changes": [
+    "Annunci globali mostrati nel portale subito dopo l'ingresso, non nei corsi",
+    "Annunci per corso mostrati solo nel relativo corso",
+    "Titolo annuncio usato direttamente nel popup, rimossa intestazione Comunicazione",
+    "Admin: selezione destinatario annunci estesa a Istruttore e Bagnino",
+    "Prompt/confirm nativi sostituiti da finestre modali grafiche del sito per approvazioni, rigetti, blocchi e nomina admin",
+    "Popup rigetto corso lato utente sostituito da modale grafica del sito"
+  ]
+}

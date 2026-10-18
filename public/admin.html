@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b2a4a" />
+  <title>Admin · Quiz Nuoto</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="study-goal.css" />
+  <link rel="stylesheet" href="promo.css" />
+</head>
+<body class="course-portal admin-page">
+  <a class="skip-link" href="#adminMain">Vai al contenuto</a>
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="icon-btn" href="index.html" aria-label="Torna ai corsi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></a>
+      <div class="appbar-title"><small>Pannello riservato</small><strong>Admin Quiz Nuoto</strong></div>
+      <div class="appbar-actions">
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Cambia tema">☀︎</button>
+        <button id="logoutBtn" class="ghost-btn small-btn" type="button">Esci</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="page admin-shell">
+    <section id="adminGate" class="auth-card" aria-labelledby="gateTitle">
+      <div class="auth-main">
+        <div>
+          <p class="eyebrow">Accesso admin</p>
+          <h2 id="gateTitle">Controllo permessi</h2>
+          <p id="gateText">Accedi con l'account owner/admin per usare questa pagina.</p>
+        </div>
+        <div id="gateStatus" class="status-pill">Controllo</div>
+      </div>
+      <div class="auth-grid" id="loginControls">
+        <input id="emailInput" type="email" placeholder="Email" autocomplete="email" aria-label="Email" />
+        <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" aria-label="Password" />
+        <button id="loginBtn" class="primary-btn" type="button">Accedi</button>
+        <button id="googleBtn" class="ghost-btn" type="button">Google</button>
+      </div>
+      <p id="adminMessage" class="message"></p>
+    </section>
+
+    <main id="adminMain" class="hidden">
+      <header class="home-head">
+        <p class="kicker">Pannello riservato</p>
+        <h1>Gestione</h1>
+      </header>
+      <section class="panel admin-summary" aria-labelledby="adminSummaryTitle">
+        <div class="panel-head">
+          <h2 id="adminSummaryTitle">Panoramica</h2>
+        </div>
+        <div class="course-stats-toggle" id="courseStatsToggle">
+          <button class="admin-tab active" type="button" data-stats-course="istruttore">Istruttore</button>
+          <button class="admin-tab" type="button" data-stats-course="bagnino">Bagnino</button>
+          <button class="admin-tab" type="button" data-stats-course="arte">Arte</button>
+        </div>
+        <div class="admin-summary-body"><div id="adminStats" class="hero-stats"></div></div>
+      </section>
+
+      <div class="admin-tabs" id="adminTabs">
+        <button class="admin-tab active" type="button" data-section="requests">Richieste account</button>
+        <button class="admin-tab" type="button" data-section="users">Utenti approvati</button>
+        <button class="admin-tab" type="button" data-section="announcements">Annunci</button>
+        <button class="admin-tab" type="button" data-section="courses">Corsi</button>
+        <button class="admin-tab" type="button" data-section="streak">Streak</button>
+        <button class="admin-tab" type="button" data-section="fad">FAD</button>
+        <button class="admin-tab" type="button" data-section="promo">Nuotifica</button>
+      </div>
+
+      <section class="panel admin-section" id="requestsSection">
+        <div class="section-title compact-title">
+          <div>
+            <h3>Richieste account</h3>
+            <p class="message">Approva o rigetta le richieste. Puoi scegliere quali corsi abilitare; per ora non viene inviata nessuna email automatica.</p>
+          </div>
+          <button id="refreshRequestsBtn" class="secondary-btn small-btn" type="button">Aggiorna</button>
+        </div>
+        <div id="accountRequestsList" class="admin-list"></div>
+      </section>
+
+      <div class="admin-grid admin-section hidden" id="usersSection">
+        <section class="panel">
+          <div class="section-title compact-title">
+            <div>
+              <h3>Utenti</h3>
+              <p class="message">Cerca per email o UID.</p>
+            </div>
+            <button id="refreshUsersBtn" class="secondary-btn small-btn" type="button">Aggiorna</button>
+          </div>
+          <input id="userSearchInput" class="admin-input" type="search" placeholder="Cerca utente..." />
+          <div id="usersList" class="admin-list"></div>
+        </section>
+
+        <section class="panel" id="userDetailPanel">
+          <h3>Scheda tecnica utente</h3>
+          <div id="userDetail" class="admin-detail"><p class="message">Seleziona un utente.</p></div>
+        </section>
+      </div>
+
+      <div class="admin-grid admin-section hidden" id="announcementsSection">
+        <section class="panel">
+          <h3>Nuovo annuncio</h3>
+          <div class="admin-form">
+            <label>Destinatario</label>
+            <select id="announcementScope">
+              <option value="global">Tutti gli utenti</option>
+              <option value="istruttore">Solo corso Istruttore di Nuoto</option>
+              <option value="bagnino">Solo corso Assistenti Bagnanti Piscina</option>
+              <option value="arte">Solo corso Arte · Quinto Liceo</option>
+              <option value="user">Utente selezionato</option>
+            </select>
+            <label>Titolo</label>
+            <input id="announcementTitle" type="text" placeholder="Titolo annuncio" />
+            <label>Messaggio</label>
+            <textarea id="announcementMessage" rows="5" placeholder="Testo annuncio"></textarea>
+            <button id="createAnnouncementBtn" class="primary-btn" type="button">Pubblica annuncio</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title compact-title">
+            <h3>Annunci attivi</h3>
+            <button id="refreshAnnouncementsBtn" class="secondary-btn small-btn" type="button">Aggiorna</button>
+          </div>
+          <div id="announcementsList" class="admin-list"></div>
+        </section>
+      </div>
+
+      <div class="admin-section hidden" id="coursesSection">
+        <section class="panel">
+          <div class="section-title compact-title">
+            <div>
+              <h3>Accesso ai corsi</h3>
+              <p class="message">Questi comandi valgono per <strong>tutti</strong> gli utenti del corso, a prescindere dall'approvazione individuale. Lo staff admin non viene mai bloccato.</p>
+            </div>
+            <button id="refreshCoursesBtn" class="secondary-btn small-btn" type="button">Aggiorna</button>
+          </div>
+          <div id="courseSettingsList" class="admin-list"></div>
+        </section>
+      </div>
+
+      <div class="admin-section hidden" id="streakSection">
+        <section class="panel">
+          <div class="section-title compact-title">
+            <div>
+              <h3>Streak reale di un utente</h3>
+              <p class="message">Legge l'obiettivo/streak salvato su Firestore per un utente e un corso specifici. Sola lettura: non modifica nulla.</p>
+            </div>
+          </div>
+          <div class="admin-form">
+            <label>Utente</label>
+            <select id="streakUserSelect"><option value="">— scegli un utente approvato —</option></select>
+            <label>Corso</label>
+            <select id="streakCourseSelect">
+              <option value="istruttore">Istruttore di Nuoto</option>
+              <option value="bagnino">Assistenti Bagnanti Piscina</option>
+              <option value="arte">Arte · Quinto Liceo</option>
+            </select>
+            <button id="streakInspectBtn" class="secondary-btn small-btn" type="button">Leggi da Firestore</button>
+          </div>
+          <div id="streakInspectResult" class="request-meta"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title compact-title">
+            <div>
+              <h3>Simulatore streak (test interno)</h3>
+              <p class="message">Non tocca account reali: fa avanzare un giorno finto alla volta con la <strong>stessa identica logica</strong> usata sul sito, cosi puoi vedere a occhio che la streak sale nei giorni consecutivi, si ferma se salti un giorno e riparte da 1 quando riprendi.</p>
+            </div>
+          </div>
+          <div class="study-widget-body" style="margin-bottom:14px;">
+            <div class="study-flame-wrap">
+              <div class="study-fire" id="simFireIcon" data-level="0" aria-hidden="true">🔥</div>
+              <strong id="simStreakValue">0</strong>
+              <span>giorni</span>
+            </div>
+            <div class="study-widget-copy">
+              <strong id="simDayLabel">Giorno simulato: 0</strong>
+              <span id="simSummary">Record: 0 · Giorni totali riusciti: 0 · Ultimo giorno riuscito: —</span>
+            </div>
+          </div>
+          <div class="request-actions">
+            <button id="simMetBtn" class="secondary-btn small-btn" type="button">✅ Giorno riuscito (obiettivo raggiunto)</button>
+            <button id="simSkipBtn" class="secondary-btn small-btn" type="button">⏭ Giorno saltato</button>
+            <button id="simResetBtn" class="danger-btn small-btn" type="button">Azzera simulazione</button>
+          </div>
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Giorno</th><th>Esito</th><th>Streak</th><th>Record</th><th>Note</th></tr></thead>
+              <tbody id="simLogBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="admin-section hidden" id="fadSection">
+        <section class="panel">
+          <div class="section-title compact-title">
+            <div>
+              <h3>Catalogo video FAD (corso Istruttore)</h3>
+              <p class="message">Aggiungi qui i video della FAD con la loro durata: il sito usa questi dati per calcolare l'obiettivo di studio e il ritmo consigliato agli utenti. L'ordine qui sotto è l'ordine mostrato nel corso.</p>
+            </div>
+            <button id="refreshFadBtn" class="secondary-btn small-btn" type="button">Aggiorna</button>
+          </div>
+          <div class="admin-form">
+            <label>Titolo video</label>
+            <input id="fadVideoTitleInput" type="text" placeholder="Es. Lezione 1 — Introduzione" maxlength="160" />
+            <label>Durata (minuti)</label>
+            <input id="fadVideoMinutesInput" type="number" min="1" max="600" step="1" placeholder="Es. 15" />
+            <button id="fadAddVideoBtn" class="primary-btn small-btn" type="button">Aggiungi video</button>
+          </div>
+          <p class="request-meta">Totale catalogo: <strong id="fadVideoTotal">0</strong> video · <strong id="fadMinutesTotal">0</strong> minuti</p>
+          <div id="fadVideoList" class="admin-list"></div>
+        </section>
+      </div>
+
+      <div class="admin-section hidden" id="promoSection">
+        <section class="panel">
+          <div class="section-title compact-title">
+            <div>
+              <h3>Promozione app Nuotifica</h3>
+              <p class="message">Il banner compare in cima alla schermata dei corsi. Il popup animato compare a ogni utente una sola volta, la prima volta che entra: con “Mostralo di nuovo a tutti” ricompare una volta a tutti.</p>
+            </div>
+          </div>
+          <div id="promoAdmin" class="admin-list"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="account-actions.js"></script>
+  <script src="questions.js"></script>
+  <script src="bagnino_questions.js"></script>
+  <script src="arte_works.js"></script>
+  <script src="study-goal.js"></script>
+  <script src="admin.js"></script>
+  <script src="shell.js"></script>
+  <script src="promo.js"></script>
+</body>
+</html>

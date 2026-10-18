@@ -1,0 +1,11 @@
+{
+  "version": "v40",
+  "title": "Classifica Sudoku Arte",
+  "changes": [
+    "Aggiunta classifica giornaliera Sudoku delle Opere",
+    "Aggiunta classifica di sempre Sudoku delle Opere",
+    "Salvataggio miglior punteggio personale giornaliero e assoluto",
+    "Aggiornate Firestore rules per leaderboards"
+  ],
+  "data_files_touched": false
+}

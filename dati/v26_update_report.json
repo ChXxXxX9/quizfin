@@ -1,0 +1,8 @@
+{
+  "version": "v26",
+  "changes": [
+    "complete-verification function to avoid Firestore permission error on Entra nel sito",
+    "admin pending approvals notification bell on portal and course pages",
+    "service worker cache bumped"
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "version": "v11",
+  "validation_method": "Correttore PDF visuale: rendering pagina per pagina + classificazione delle lettere A/B/C/D dalle celle del correttore. Le celle corrette sono state verificate con contact sheet interno sulle differenze.",
+  "total_questions": 1000,
+  "visual_corrector_answers_classified": 999,
+  "blank_answer_cells_in_visual_corrector": [
+    964
+  ],
+  "blank_964_resolution": "Domanda 964 mantenuta C: nel correttore visivo la cella è vuota; la risposta C è coerente con la definizione di frustrazione ed era già presente nella base dati precedente.",
+  "changed_answers_count": 22,
+  "changed_answers": [
+    {
+      "id": 15,
+      "old": "D",
+      "new": "C",
+      "topic": "Attività speciali",
+      "question": "In un corso di prima infanzia la presenza del genitore e assolutamente necessaria ed indispensabile:"
+    },
+    {
+      "id": 24,
+      "old": "A",
+      "new": "D",
+      "topic": "Attività speciali",
+      "question": "La classificazione funzionale del nuoto agonistico per disabili:"
+    },
+    {
+      "id": 122,
+      "old": "A",
+      "new": "C",
+      "topic": "Biofisiologia",
+      "question": "La funzione del sangue è quella di:"
+    },
+    {
+      "id": 183,
+      "old": "A",
+      "new": "B",
+      "topic": "Fitness in acqua",
+      "question": "Parlando di ginnastica in acqua o a terra:"
+    },
+    {
+      "id": 208,
+      "old": "B",
+      "new": "A",
+      "topic": "La Cultura dell’Acqua",
+      "question": "Indica l’ordine corretto delle fasi di una lezione di nuoto:"
+    },
+    {
+      "id": 251,
+      "old": "D",
+      "new": "A",
+      "topic": "La Cultura dell’Acqua",
+      "question": "Quali di questi soggetti non fanno parte della FIN?"
+    },
+    {
+      "id": 255,
+      "old": "A",
+      "new": "D",
+      "topic": "La Cultura dell’Acqua",
+      "question": "Quali sono gli organi tecnici della FIN?"
+    },
+    {
+      "id": 261,
+      "old": "A",
+      "new": "D",
+      "topic": "La Cultura dell’Acqua",
+      "question": "Quante abilità motorie si possono apprendere?"
+    },
+    {
+      "id": 264,
+      "old": "C",
+      "new": "D",
+      "topic": "La Cultura dell’Acqua",
+      "question": "Un’abilità motoria è:"
+    },
+    {
+      "id": 341,
+      "old": "D",
+      "new": "A",
+      "topic": "La scuola nuoto",
+      "question": "In caso di incidente in piscina quale numero telefonico è necessario usare per innescare la cosiddetta catena della sopravvivenza?"
+    },
+    {
+      "id": 388,
+      "old": "B",
+      "new": "C",
+      "topic": "La scuola nuoto",
+      "question": "La respirazione nella nuotata a rana avviene:"
+    },
+    {
+      "id": 389,
+      "old": "D",
+      "new": "C",
+      "topic": "La scuola nuoto",
+      "question": "La scelta degli esercizi è la fase della programmazione didattica in cui:"
+    },
+    {
+      "id": 432,
+      "old": "C",
+      "new": "A",
+      "topic": "La scuola nuoto",
+      "question": "Nella didattica della farfalla s’inizia insegnando:"
+    },
+    {
+      "id": 454,
+      "old": "D",
+      "new": "B",
+      "topic": "La scuola nuoto",
+      "question": "Nella nuotata a farfalla la respirazione avviene:"
+    },
+    {
+      "id": 456,
+      "old": "A",
+      "new": "B",
+      "topic": "La scuola nuoto",
+      "question": "Nella nuotata a farfalla, il secondo colpo di gambe che funzione ha?"
+    },
+    {
+      "id": 459,
+      "old": "C",
+      "new": "B",
+      "topic": "La scuola nuoto",
+      "question": "Nella nuotata a rana la gamba inizia a flettersi sulla coscia:"
+    },
+    {
+      "id": 679,
+      "old": "C",
+      "new": "D",
+      "topic": "Metodologia",
+      "question": "L’equilibrio:"
+    },
+    {
+      "id": 686,
+      "old": "A",
+      "new": "C",
+      "topic": "Metodologia",
+      "question": "La coordinazione è la capacità di:"
+    },
+    {
+      "id": 783,
+      "old": "D",
+      "new": "B",
+      "topic": "Metodologia",
+      "question": "Per unità di base del movimento intendiamo:"
+    },
+    {
+      "id": 837,
+      "old": "A",
+      "new": "B",
+      "topic": "Metodologia",
+      "question": "Quali sono le evoluzioni fisiologiche che differenziano un allenamento di contenuto aerobico da un allenamento di sforzo più intenso?"
+    },
+    {
+      "id": 853,
+      "old": "C",
+      "new": "B",
+      "topic": "Metodologia",
+      "question": "Quando vengono inseriti due colpi di gambe a farfalla all’interno di un ciclo di bracciata?"
+    },
+    {
+      "id": 856,
+      "old": "D",
+      "new": "A",
+      "topic": "Metodologia",
+      "question": "Strisciare è:"
+    }
+  ],
+  "question_261": "corretta aggiornata da A a D come da correttore visuale",
+  "missing_question_ids": [],
+  "missing_answer_ids": [],
+  "option_count_distribution": {
+    "4": 999,
+    "3": 1
+  }
+}

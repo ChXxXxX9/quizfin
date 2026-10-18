@@ -1,0 +1,15 @@
+{
+  "version": "v13",
+  "changes": [
+    "Added the complete 1000-question checklist in Scheda tecnica, with a check mark for questions already encountered.",
+    "Re-runs the 22 corrected-question progress scrub with a v13 migration id.",
+    "Shows the correction popup again to every user with the v13 notice id.",
+    "Updated service worker cache to quiz-nuoto-v13."
+  ],
+  "corrected_question_ids_removed_from_progress": [15, 24, 122, 183, 208, 251, 255, 261, 264, 341, 388, 389, 432, 454, 456, 459, 679, 686, 783, 837, 853, 856],
+  "protected_files_not_modified_from_v12": {
+    "questions.js_sha256": "ce2dedfa6f219d589dcce7b6947db339a3aba713cf03c2adf162bef47da0b740",
+    "questions.json_sha256": "b98fcfcb963d8283ace4f4cd4447e24ed1722ca7bfd756857ea5de40e074867d",
+    "explanations.js_sha256": "e25531f63a61ced3f7c19fb3b47862daebfe5e6f5cbb44e2786a5b933843a176"
+  }
+}

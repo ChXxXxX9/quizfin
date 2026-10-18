@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Arte · Quinto Liceo · Quiz Nuoto</title>
+  <meta name="description" content="Allenamento al riconoscimento delle opere d'arte per l'esame di quinto liceo." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#f3f5f9" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="preload" href="assets/fonts/adventor-bold.woff" as="font" type="font/woff" crossorigin />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="study-goal.css" />
+  <link rel="stylesheet" href="promo.css" />
+</head>
+<body class="course-arte has-nav" data-view="none">
+  <a class="skip-link" href="#arteMain">Vai al contenuto</a>
+
+  <nav class="tabbar" aria-label="Navigazione del corso">
+    <a class="rail-brand" href="index.html"><img src="icon-192.png" alt="" /><span>Quiz Nuoto<small>Arte · Quinto Liceo</small></span></a>
+    <button class="tab" type="button" data-proxy="#backHomeFromStatsBtn,#exitSudokuBtn,#backHomeFromResultsBtn" data-nav-view="homeView"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>Home</button>
+    <button class="tab" type="button" data-proxy="#showStatsBtn" data-nav-view="statsView"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11"/><path d="M12 20V4"/><path d="M19 20v-6"/></svg></span>Statistiche</button>
+    <a class="tab" href="index.html"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg></span>Corsi</a>
+    <button id="logoutBtn" class="tab" type="button"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></span>Esci</button>
+  </nav>
+
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="icon-btn appbar-back" href="index.html" aria-label="Tutti i corsi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></a>
+      <div class="appbar-title collapses"><small>Corso temporaneo</small><strong>Arte · Quinto Liceo</strong></div>
+      <div class="appbar-actions">
+        <button id="adminBellBtn" class="icon-btn notification-btn hidden" type="button" aria-label="Richieste in attesa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="adminPendingBadge" class="notification-badge">0</span></button>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Cambia tema">☀︎</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <section id="authGate" class="auth-card status-gate-card" aria-labelledby="gateTitle">
+      <div class="approval-status-hero">
+        <p class="eyebrow">Controllo accesso</p>
+        <h2 id="gateTitle">Verifica corso Arte</h2>
+        <p id="gateText">Stiamo controllando l'autorizzazione al corso.</p>
+      </div>
+    </section>
+
+    <main id="arteMain" class="hidden">
+      <!-- ============ HOME ============ -->
+      <section id="homeView" class="view active" aria-labelledby="homeTitle">
+        <header class="home-head">
+          <p class="kicker">Corso temporaneo · fino al 15 luglio</p>
+          <h1 id="homeTitle">Arte · Quinto Liceo</h1>
+        </header>
+
+        <div class="home-top">
+          <section class="hero" aria-labelledby="heroTitle">
+            <div class="dial" data-dial-source="#homeStats .stat-card strong" role="img" aria-label="Opere completate almeno una volta">
+              <span class="dial-major"></span>
+              <span class="dial-hand"></span>
+              <span class="dial-value"><strong data-dial-value>—</strong><small>opere</small></span>
+            </div>
+            <div class="hero-body">
+              <p class="hero-kicker">Riprendi da qui</p>
+              <h2 id="heroTitle">Quiz misto</h2>
+              <p class="hero-meta">10 opere · titolo, data, artista, corrente e luogo</p>
+              <button id="startMixedBtn" class="hero-cta" type="button">Avvia il quiz misto <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button>
+            </div>
+          </section>
+          <div id="studyGoalSlot"></div>
+        </div>
+
+        <section class="section" aria-labelledby="secTrain">
+          <div class="section-head"><h2 id="secTrain">Allenati</h2></div>
+          <div class="tiles"><div class="tile-grid">
+            <div class="tile is-wide">
+              <div class="tile-head">
+                <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg></span>
+                <div><p class="tile-title">Per corrente artistica</p><p class="tile-desc">Una sessione da massimo 10 opere della corrente scelta.</p></div>
+              </div>
+              <div class="tile-controls">
+                <select id="correnteSelect" aria-label="Corrente artistica"></select>
+                <button id="startCorrenteBtn" class="primary-btn" type="button">Avvia</button>
+              </div>
+            </div>
+
+            <button id="startWrongBtn" class="tile" type="button">
+              <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
+              <svg class="tile-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              <span class="tile-title">Ripassa gli errori</span>
+              <span class="tile-desc">Le opere sbagliate nei quiz precedenti.</span>
+            </button>
+
+            <button id="startMarkedBtn" class="tile" type="button">
+              <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg></span>
+              <svg class="tile-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              <span class="tile-title">Opere segnate</span>
+              <span class="tile-desc">Quelle che hai salvato durante i quiz.</span>
+            </button>
+          </div></div>
+        </section>
+
+        <section class="section" aria-labelledby="secExam">
+          <div class="section-head"><h2 id="secExam">Esame e gioco</h2></div>
+          <div class="tiles"><div class="tile-grid">
+            <div class="tile is-wide" id="arteExamBanner">
+              <div class="tile-head">
+                <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg></span>
+                <div><p class="tile-title">Esamone finale</p><p class="tile-desc" id="examStatus">Completa tutte le opere almeno una volta per sbloccarlo.</p></div>
+              </div>
+              <button id="startExamBtn" class="primary-btn" type="button" disabled>Esamone bloccato</button>
+            </div>
+
+            <div class="tile is-wide">
+              <div class="tile-head">
+                <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></span>
+                <div><p class="tile-title">Sudoku delle Opere</p><p class="tile-desc">Completa la griglia 9×9 rispondendo sulle opere.</p></div>
+              </div>
+              <div class="tile-controls">
+                <select id="sudokuModeSelect" aria-label="Modalità del sudoku">
+                  <option value="artista">Autore</option>
+                  <option value="data">Data</option>
+                  <option value="luogo">Luogo di conservazione</option>
+                  <option value="corrente">Corrente artistica</option>
+                  <option value="misto">Misto</option>
+                </select>
+                <button id="startSudokuBtn" class="primary-btn" type="button">Avvia</button>
+              </div>
+            </div>
+          </div></div>
+        </section>
+
+        <section class="section" aria-labelledby="secBoard">
+          <div class="section-head">
+            <h2 id="secBoard">Classifica Sudoku</h2>
+            <button id="refreshLeaderboardsBtn" class="ghost-btn small-btn" type="button">Aggiorna</button>
+          </div>
+          <div class="panel">
+            <div class="leaderboard-split">
+              <div>
+                <h4>Oggi</h4>
+                <div id="leaderboardDailyList" class="leaderboard-list"><p class="message">Caricamento classifica…</p></div>
+              </div>
+              <div>
+                <h4>Di sempre</h4>
+                <div id="leaderboardAllTimeList" class="leaderboard-list"><p class="message">Caricamento classifica…</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section numbers" aria-labelledby="secNumbers">
+          <div class="section-head"><h2 id="secNumbers">I tuoi numeri</h2></div>
+          <section class="stats-grid compact-stats" id="homeStats"></section>
+          <div class="arte-countdown"><span>Scadenza del corso</span><strong id="countdownBig">--</strong></div>
+          <button id="showStatsBtn" class="secondary-btn stats-hero-btn" type="button">Apri la scheda tecnica completa</button>
+        </section>
+      </section>
+
+      <!-- ============ QUIZ OPERE ============ -->
+      <section id="quizView" class="view hidden" aria-labelledby="quizProgressTitle">
+        <div class="arte-question-card">
+          <div class="focus-head">
+            <button id="exitQuizBtn" class="icon-btn bordered" type="button" aria-label="Esci dal quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            <div class="focus-meta">
+              <p id="quizModeLabel" class="eyebrow">Quiz</p>
+              <h2 id="quizProgressTitle">Opera 1/10</h2>
+            </div>
+            <div class="quiz-pills">
+              <span id="quizCounter" class="status-pill">0/10</span>
+            </div>
+          </div>
+          <div class="session-progress"><span id="sessionProgressBar"></span></div>
+
+          <div class="arte-work-layout">
+            <div class="arte-image-frame">
+              <img id="workImage" alt="Opera da riconoscere" />
+              <div id="imageFallback" class="arte-image-fallback hidden">Immagine non disponibile</div>
+            </div>
+            <div class="arte-answer-panel">
+              <p id="workMeta" class="message"></p>
+              <div id="answerFields" class="arte-fields"></div>
+              <div id="hintPanel" class="arte-hint-panel hidden"></div>
+              <div class="quiz-actions">
+                <button id="hintBtn" class="ghost-btn" type="button">Aiuto: completa un campo</button>
+                <button id="markWorkBtn" class="ghost-btn" type="button">☆ Segna opera</button>
+                <button id="submitWorkBtn" class="primary-btn wide" type="button">Conferma opera</button>
+                <button id="nextWorkBtn" class="primary-btn wide hidden" type="button">Prossima opera</button>
+              </div>
+              <div id="workFeedback" class="feedback-box hidden"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SUDOKU ============ -->
+      <section id="sudokuView" class="view hidden" aria-labelledby="sudokuTitle">
+        <div class="sudoku-panel-head">
+          <div>
+            <p class="eyebrow">Sudoku delle Opere</p>
+            <h2 id="sudokuTitle">Modalità</h2>
+            <p id="sudokuSubtitle" class="message">Tocca una cella vuota, riconosci l'opera e completa la griglia.</p>
+          </div>
+          <div class="result-actions mt-0">
+            <span id="sudokuLives" class="status-pill">Vite 3</span>
+            <span id="sudokuScore" class="status-pill">0 pt</span>
+            <button id="exitSudokuBtn" class="ghost-btn small-btn" type="button">Esci</button>
+          </div>
+        </div>
+        <div class="sudoku-layout">
+          <div>
+            <div id="sudokuGrid" class="sudoku-grid" aria-label="Griglia sudoku 9 per 9"></div>
+            <div id="sudokuLegend" class="sudoku-legend"></div>
+          </div>
+          <aside id="sudokuChallenge" class="sudoku-challenge-card">
+            <p class="eyebrow">Seleziona una cella</p>
+            <h3>Pronto per iniziare</h3>
+            <p class="message">Le celle già piene sono indizi. Le celle vuote si completano rispondendo correttamente.</p>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ============ RISULTATO ============ -->
+      <section id="resultsView" class="view hidden" aria-labelledby="resultTitle">
+        <div class="result-card">
+          <p class="eyebrow">Risultato</p>
+          <h2 id="resultTitle">Quiz completato</h2>
+          <div id="resultSummary" class="stats-grid compact-stats"></div>
+          <div class="result-actions">
+            <button id="retryWrongFromResultsBtn" class="secondary-btn" type="button">Ripassa gli errori</button>
+            <button id="backHomeFromResultsBtn" class="primary-btn" type="button">Torna alla home</button>
+          </div>
+          <div id="answersReview" class="answers-review"></div>
+        </div>
+      </section>
+
+      <!-- ============ STATISTICHE ============ -->
+      <section id="statsView" class="view hidden" aria-labelledby="statsTitle">
+        <div class="view-head">
+          <button id="backHomeFromStatsBtn" class="icon-btn bordered" type="button" aria-label="Torna alla home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+          <div>
+            <p class="eyebrow">Scheda tecnica</p>
+            <h2 id="statsTitle">Statistiche Arte</h2>
+          </div>
+        </div>
+        <div class="stats-wrap"><div id="statsGrid" class="stats-grid"></div></div>
+        <div class="stats-panels">
+          <div class="panel">
+            <h3>Precisione per campo</h3>
+            <div id="fieldStatsList" class="admin-list small-list"></div>
+          </div>
+          <div class="panel">
+            <h3>Storico quiz</h3>
+            <div id="historyList" class="admin-list small-list"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <datalist id="operaOptions"></datalist>
+  <datalist id="dataOptions"></datalist>
+  <datalist id="artistaOptions"></datalist>
+  <datalist id="correnteOptions"></datalist>
+  <datalist id="luogoOptions"></datalist>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="study-goal.js"></script>
+  <script src="arte_works.js"></script>
+  <script src="app_arte.js"></script>
+  <script src="shell.js"></script>
+  <script src="promo.js"></script>
+</body>
+</html>

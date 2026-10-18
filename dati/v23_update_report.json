@@ -1,0 +1,13 @@
+{
+  "version": "v23",
+  "changes": [
+    "Pagina post-registrazione: solo stato di approvazione, niente scelta corsi finché non approvato",
+    "Accesso ai corsi visibile solo dopo approvazione admin + email verificata",
+    "Richiesta accesso a un corso consentita una sola volta; poi stato Accesso richiesto",
+    "Rigetto con motivo visibile utente e richiesta di ricontrollo unica",
+    "Secondo rigetto/revisione rigettata blocca account",
+    "Admin evidenzia revisioni in giallo e può approvare/rifiutare",
+    "Eliminati popup nuovo corso, Ripassone e avviso vecchie 22 domande corrette",
+    "Bagnino resta a 573 domande"
+  ]
+}

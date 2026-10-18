@@ -1,0 +1,38 @@
+{
+  "version": "v19_multicorso_bagnino_piscina",
+  "bagnino_questions": 573,
+  "bagnino_lessons": 12,
+  "lessons": {
+    "1 - BLS": 51,
+    "2 - Anatomia": 52,
+    "3 - Tipologie di BLS": 45,
+    "4 - Arresti respiratori": 36,
+    "5 - Annegamento": 62,
+    "6 - Traumatologia": 71,
+    "7 - B.T.L.S.": 44,
+    "8 - Altre emergenze mediche": 88,
+    "9 - Soccorso in Team": 15,
+    "10 - Alcool e Droghe": 25,
+    "11 - Responsabilità": 26,
+    "12 - La Piscina": 58
+  },
+  "examone_bagnino": {
+    "questions": 30,
+    "time_minutes": 20,
+    "max_wrong": 3,
+    "pass_threshold_correct": 27,
+    "selection": "casuale con priorità parziale su carenze/errori"
+  },
+  "instructor_data_hashes_preserved": true,
+  "email_approval": "disabled",
+  "subscription_plan": "removed",
+  "new_files": [
+    "index.html portal",
+    "istruttore.html",
+    "bagnino.html",
+    "portal.js",
+    "bagnino_questions.js",
+    "bagnino_explanations.js",
+    "app_bagnino.js"
+  ]
+}

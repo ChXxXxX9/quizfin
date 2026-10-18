@@ -1,0 +1,52 @@
+{
+  "version": "v12",
+  "purpose": "Progress scrub migration after verified answer-key corrections.",
+  "correctedAnswerQuestionIds": [
+    15,
+    24,
+    122,
+    183,
+    208,
+    251,
+    255,
+    261,
+    264,
+    341,
+    388,
+    389,
+    432,
+    454,
+    456,
+    459,
+    679,
+    686,
+    783,
+    837,
+    853,
+    856
+  ],
+  "dataFilesNotModifiedInV12": [
+    "questions.js",
+    "questions.json",
+    "explanations.js"
+  ],
+  "integrity": {
+    "questions.js": {
+      "sha256": "ce2dedfa6f219d589dcce7b6947db339a3aba713cf03c2adf162bef47da0b740",
+      "bytes": 387252
+    },
+    "questions.json": {
+      "sha256": "b98fcfcb963d8283ace4f4cd4447e24ed1722ca7bfd756857ea5de40e074867d",
+      "bytes": 507213
+    },
+    "explanations.js": {
+      "sha256": "e25531f63a61ced3f7c19fb3b47862daebfe5e6f5cbb44e2786a5b933843a176",
+      "bytes": 1268738
+    }
+  },
+  "migration": {
+    "id": "v12-corrected-answer-key-progress-scrub",
+    "effect": "When each user logs in, the app removes the 22 corrected question IDs from mixed/topic completed progress and wrong-question lists, so they can reappear and be answered with the verified answer key.",
+    "note": "This is client-side per-user migration. Existing aggregate statistics are not retroactively recalculated."
+  }
+}

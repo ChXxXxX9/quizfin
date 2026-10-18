@@ -1,0 +1,18 @@
+{
+  "version": "v21_fix_serio_account_540",
+  "bagnino_questions_in_uploaded_xlsx_detected_rows": 573,
+  "bagnino_questions_in_site": 540,
+  "action": "Banca dati Bagnino limitata a 540 domande come da richiesta utente; rimosse dal sito le domande ID 541-573.",
+  "account_flow": "Richiesta account e richieste corso passano da Netlify Function create-account-request, non più da scrittura client Firestore.",
+  "admin_flow": "Dopo approvazione/rigetto la richiesta viene rimossa dalla lista richieste.",
+  "email": "nessun invio email automatico",
+  "subscription_plans": "rimossi",
+  "ui_changes": [
+    "flashcard giallo",
+    "misto verde",
+    "segnate arancione",
+    "esamone bagnino viola",
+    "annunci admin come popup",
+    "scheda tecnica nel banner alto"
+  ]
+}
