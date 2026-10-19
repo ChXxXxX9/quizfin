@@ -4,7 +4,7 @@
 import { leggiAccountServizio, creaGestoreToken, creaClientGoogle } from './google.js';
 import { creaFirestore } from './firestore.js';
 import { creaInvio, inParallelo } from './invio.js';
-import { oraItaliana, promemoriaDovuto, promemoriaUtente, destinatari, minutiAMezzanotte, IMPOSTAZIONI_PREDEFINITE } from './logica.js';
+import { oraItaliana, promemoriaDovuto, promemoriaUtente, destinatari, minutiAMezzanotte, richiesteDaSegnalare, testoRichieste, IMPOSTAZIONI_PREDEFINITE } from './logica.js';
 
 const SITO = (process.env.SITO_URL || 'https://quiznuoto.web.app').replace(/\/$/, '');
 const assoluto = (url) => {
@@ -34,6 +34,7 @@ async function main() {
     return utenti;
   }
   const tokenDaTogliere = new Map(); // uid -> Set(token)
+  const tokenAdmin = new Map(); // uid -> token letti per l'avviso richieste
 
   async function manda(utente, messaggio) {
     let ok = 0; let falliti = 0;
@@ -74,8 +75,44 @@ async function main() {
     }
   }
 
-  // ---- 2) Promemoria streak ----
   const impostazioni = { ...IMPOSTAZIONI_PREDEFINITE, ...(await fs.leggi('courseSettings/notifiche') || {}) };
+
+  // ---- 1b) Nuove richieste account: avviso solo agli admin ----
+  try {
+    // Si leggono solo le richieste arrivate dopo l'ultimo controllo (segnalibro in meta/richieste)
+    const segnalibro = await fs.leggi('meta/richieste');
+    const candidati = segnalibro?.lastCreatedAt
+      ? await fs.tutti('accountRequests', { dove: ['createdAt', 'GREATER_THAN', new Date(segnalibro.lastCreatedAt)], limite: 100 })
+      : await fs.tutti('accountRequests', { limite: 200 });
+    const nuove = richiesteDaSegnalare(candidati);
+    const ultime = candidati.map((r) => Date.parse(r.dati?.createdAt || '')).filter(Number.isFinite);
+    const prossimo = ultime.length ? new Date(Math.max(...ultime)) : (segnalibro?.lastCreatedAt ? null : new Date(Date.now() - 5 * 60 * 1000));
+    if (nuove.length) {
+      if (impostazioni.adminRequests !== false) {
+        const admin = (await fs.tutti('admins', { dove: ['active', 'EQUAL', true] })).map((a) => a.percorso[1]);
+        const testo = testoRichieste(nuove);
+        let dispositivi = 0;
+        for (const uid of admin) {
+          const dati = await fs.leggi(`users/${uid}`);
+          const tokens = Array.isArray(dati?.push?.tokens) ? dati.push.tokens.filter(Boolean) : [];
+          if (!tokens.length) continue;
+          const r = await manda({ uid, tokens }, { ...testo, url: assoluto(testo.url), tag: 'admin-richieste' });
+          dispositivi += r.ok;
+          tokenAdmin.set(uid, tokens);
+        }
+        console.log(`Richieste account: ${nuove.length} nuove → avviso a ${dispositivi} dispositivi admin.`);
+      }
+      // segnate come avvisate anche se l'avviso è spento: niente raffica quando lo si riaccende
+      for (const r of nuove) await fs.aggiornaCampi(`accountRequests/${r.percorso[1]}`, { adminNotifiedAt: new Date() }, ['adminNotifiedAt']);
+    }
+    if (prossimo && (!segnalibro?.lastCreatedAt || prossimo > new Date(segnalibro.lastCreatedAt))) {
+      await fs.scrivi('meta/richieste', { lastCreatedAt: prossimo });
+    }
+  } catch (e) {
+    console.error(`Avviso richieste account non riuscito: ${e.message}`);
+  }
+
+  // ---- 2) Promemoria streak ----
   const statoSalvato = await fs.leggi('meta/promemoria');
   const dovuto = forzaPromemoria ? { orario: adesso.ora, stato: statoSalvato || { date: adesso.data, done: [] } } : promemoriaDovuto(impostazioni, statoSalvato, adesso);
   if (dovuto) {
@@ -107,8 +144,8 @@ async function main() {
 
   // ---- 3) Pulizia dei dispositivi non più validi ----
   for (const [uid, vecchi] of tokenDaTogliere) {
-    const u = utenti.find((x) => x.uid === uid);
-    const restano = u.tokens.filter((t) => !vecchi.has(t));
+    const tutti = utenti?.find((x) => x.uid === uid)?.tokens || tokenAdmin.get(uid) || [];
+    const restano = tutti.filter((t) => !vecchi.has(t));
     await fs.aggiornaCampi(`users/${uid}`, { push: { tokens: restano } }, ['push.tokens']);
     console.log(`Tolti ${vecchi.size} dispositivi non più validi di un utente.`);
   }

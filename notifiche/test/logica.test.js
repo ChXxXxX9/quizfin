@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { oraItaliana, promemoriaDovuto, promemoriaUtente, streakReale, destinatari, testoTempo, minutiAMezzanotte } from '../src/logica.js';
+import { oraItaliana, promemoriaDovuto, promemoriaUtente, streakReale, destinatari, testoTempo, minutiAMezzanotte, richiesteDaSegnalare, testoRichieste } from '../src/logica.js';
 
 test('ora italiana con ora legale e solare', () => {
   assert.deepEqual(oraItaliana(new Date('2026-07-10T16:30:00Z')), { data: '2026-07-10', ora: 18, minuto: 30 });
@@ -76,4 +76,25 @@ test('destinatari delle notifiche dell\'admin', () => {
   assert.deepEqual(destinatari(utenti, { type: 'course', course: 'bagnino' }).map((u) => u.uid), ['b']);
   assert.deepEqual(destinatari(utenti, { type: 'course', course: 'istruttore' }).map((u) => u.uid), ['a', 'e']);
   assert.deepEqual(destinatari(utenti, { type: 'user', uid: 'b' }).map((u) => u.uid), ['b']);
+});
+
+test('richieste account: avviso solo per le nuove, testo per l\'admin', () => {
+  const r = (id, dati) => ({ percorso: ['accountRequests', id], dati });
+  const elenco = [
+    r('a', { status: 'pending', firstName: 'Giulia', lastName: 'Bianchi', requestedCourses: ['bagnino'] }),
+    r('b', { status: 'pending', firstName: 'Luca', lastName: 'Verdi', requestedCourses: ['istruttore'], adminNotifiedAt: '2026-10-18T10:00:00Z' }),
+    r('c', { status: 'rejected', firstName: 'X' }),
+    r('d', { status: 'review', firstName: 'Anna', lastName: 'Neri', requestedCourses: ['istruttore', 'arte'], reviewRequest: true })
+  ];
+  const nuove = richiesteDaSegnalare(elenco);
+  assert.deepEqual(nuove.map((x) => x.percorso[1]), ['a', 'd']);
+  const una = testoRichieste([nuove[0]]);
+  assert.match(una.titolo, /Nuova richiesta account/);
+  assert.match(una.corpo, /Giulia Bianchi chiede: Bagnino/);
+  assert.equal(una.url, './admin.html');
+  assert.match(testoRichieste([nuove[1]]).titolo, /ricontrollo/);
+  assert.match(testoRichieste([nuove[1]]).corpo, /Istruttore, Arte/);
+  const tante = testoRichieste([...nuove, r('e', { firstName: 'P' }), r('f', { email: 'q@x.it' })]);
+  assert.match(tante.titolo, /4 nuove richieste/);
+  assert.match(tante.corpo, /Giulia Bianchi, Anna Neri, P e altre 1/);
 });

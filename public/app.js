@@ -420,15 +420,20 @@
       }
 
       try {
-        await ensureBootstrapAdmin(user);
-        currentIsAdmin = await checkIsAdmin(user.uid);
-        if (currentIsAdmin) { els.adminBtn?.classList.remove('hidden'); els.adminBellBtn?.classList.remove('hidden'); await loadAdminPendingCount(); }
+        // Letture in parallelo: si entra prima nel corso
+        const [adminFlag, accountSnap, courseSettingsFirst] = await Promise.all([
+          ensureBootstrapAdmin(user).catch(() => {}).then(() => checkIsAdmin(user.uid)),
+          accountDocRef().get(),
+          fetchCourseSettings()
+        ]);
+        if (currentUser !== user) return;
+        currentIsAdmin = adminFlag;
+        if (currentIsAdmin) { els.adminBtn?.classList.remove('hidden'); els.adminBellBtn?.classList.remove('hidden'); loadAdminPendingCount(); }
 
-        const accountSnap = await accountDocRef().get();
         const cloudData = accountSnap.exists ? accountSnap.data() : null;
-        await ensureUserProfile(user, cloudData);
-        const refreshedAccountSnap = await accountDocRef().get();
-        const accountData = refreshedAccountSnap.exists ? refreshedAccountSnap.data() : cloudData;
+        // Il profilo (ultimo accesso, email…) si aggiorna in sottofondo: non serve aspettarlo
+        ensureUserProfile(user, cloudData).catch(() => {});
+        const accountData = cloudData;
         const access = accountData?.access || {};
 
         if (currentIsAdmin) {
@@ -445,7 +450,7 @@
           return;
         }
 
-        const courseSettingsSnap = await fetchCourseSettings();
+        const courseSettingsSnap = courseSettingsFirst;
         const siteSnap = FEATURE_SETTINGS.site || {};
         // Manutenzione e blocchi dell'admin: schermata dedicata (gate.js), separata dallo stato dell'account
         const systemGate = (kind, scope, title, reason) => {

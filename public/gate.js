@@ -78,5 +78,22 @@
     if (el) el.innerHTML = '';
   }
 
+  // ---- Caricamento iniziale: "Accesso in corso…" e aiuto se ci mette troppo ----
+  function watchBoot() {
+    const boot = document.querySelector('.boot');
+    if (!boot) return;
+    const label = boot.querySelector(':scope > span');
+    if (label && window.FirebaseQuiz?.likelySignedIn) label.textContent = 'Accesso in corso…';
+    setTimeout(() => {
+      if (!boot.getClientRects().length || boot.querySelector('.boot-slow')) return;
+      const help = document.createElement('div');
+      help.className = 'boot-slow';
+      help.innerHTML = '<p>Ci sta mettendo più del solito: controlla la connessione.</p><button class="secondary-btn small-btn" type="button">Riprova</button>';
+      help.querySelector('button').addEventListener('click', () => window.location.reload());
+      boot.appendChild(help);
+    }, 10000);
+  }
+  watchBoot();
+
   window.QuizGate = Object.freeze({ show, hide });
 })();

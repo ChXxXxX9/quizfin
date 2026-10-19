@@ -65,8 +65,22 @@ circa con lo stesso secret `FIREBASE_SERVICE_ACCOUNT` e:
   streak se salta il giorno;
 - toglie da solo i dispositivi non più validi.
 
+- avvisa gli admin (e solo loro) quando arriva una richiesta di account, di accesso a un corso o di ricontrollo
+  (si può spegnere dal pannello, sezione Notifiche → Avvisi per l'admin).
+
 Per mandare subito senza aspettare: Actions → "Notifiche" → **Run workflow** (con la spunta parte anche il
-promemoria streak). GitHub a volte ritarda i lavori programmati di qualche minuto: è normale.
+promemoria streak).
+
+**Importante:** GitHub fa partire da solo i lavori programmati molto meno spesso di quanto chiesto (in pratica
+ogni 2–4 ore). Per avere notifiche puntuali basta farlo avviare ogni 5 minuti da un servizio gratuito:
+
+1. GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Generate new token:
+   solo il repository `quizfin`, permesso **Actions: Read and write**, scadenza la più lunga.
+2. [cron-job.org](https://cron-job.org) → Create cronjob → URL
+   `https://api.github.com/repos/ChXxXxX9/quizfin/actions/workflows/notifiche.yml/dispatches`, ogni 5 minuti.
+   In *Advanced*: metodo **POST**, intestazioni `Authorization: Bearer <token>`,
+   `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`, corpo `{"ref":"main"}`.
+   *Test run* deve rispondere 204.
 
 Se l'invio dà errore di permessi, in [Google Cloud → API](https://console.cloud.google.com/apis/library/fcm.googleapis.com?project=quiz-fin)
 controlla che **Firebase Cloud Messaging API** sia attiva. Prove della logica: `npm --prefix notifiche test`.

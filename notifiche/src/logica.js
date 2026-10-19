@@ -5,7 +5,7 @@ export const CORSI = {
   bagnino: { nome: 'Bagnino', unita: 'domande', pagina: 'bagnino.html' },
   arte: { nome: 'Arte', unita: 'opere', pagina: 'arte.html' }
 };
-export const IMPOSTAZIONI_PREDEFINITE = { streakReminders: true, hours: [18, 21] };
+export const IMPOSTAZIONI_PREDEFINITE = { streakReminders: true, hours: [18, 21], adminRequests: true };
 
 /** Data e ora italiane di un istante: { data: 'YYYY-MM-DD', ora, minuto }. */
 export function oraItaliana(istante = new Date()) {
@@ -103,4 +103,32 @@ export function destinatari(utenti, target = {}) {
   if (target.type === 'user') return attivi.filter((u) => u.uid === target.uid);
   if (target.type === 'course') return attivi.filter((u) => haCorso(u.access, target.course));
   return attivi;
+}
+
+/** Richieste account da segnalare all'admin: in attesa o in revisione e non ancora segnalate. */
+export function richiesteDaSegnalare(richieste) {
+  return richieste.filter((r) => ['pending', 'review'].includes(r.dati?.status || 'pending') && !r.dati?.adminNotifiedAt);
+}
+
+/** Testo della notifica all'admin per le nuove richieste account. */
+export function testoRichieste(richieste) {
+  const nome = (d) => [d.firstName, d.lastName].filter(Boolean).join(' ').trim() || d.email || 'Un utente';
+  const corsi = (d) => (Array.isArray(d.requestedCourses) ? d.requestedCourses : []).map((c) => CORSI[c]?.nome || c).join(', ');
+  if (richieste.length === 1) {
+    const d = richieste[0].dati || {};
+    const revisione = d.status === 'review' || d.reviewRequest === true;
+    const corso = corsi(d);
+    return {
+      titolo: revisione ? '🔁 Richiesta di ricontrollo' : (d.isCourseAccessRequest ? '📥 Richiesta di accesso a un corso' : '📥 Nuova richiesta account'),
+      corpo: `${nome(d)}${corso ? ` chiede: ${corso}` : ''}. Apri il pannello per approvare o rifiutare.`,
+      url: './admin.html'
+    };
+  }
+  const nomi = richieste.slice(0, 3).map((r) => nome(r.dati || {}));
+  const altri = richieste.length - nomi.length;
+  return {
+    titolo: `📥 ${richieste.length} nuove richieste account`,
+    corpo: `${nomi.join(', ')}${altri > 0 ? ` e altre ${altri}` : ''}. Apri il pannello per approvarle o rifiutarle.`,
+    url: './admin.html'
+  };
 }

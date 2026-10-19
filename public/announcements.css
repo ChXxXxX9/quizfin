@@ -151,3 +151,10 @@
   .push-admin-stats .stat-card { min-width: 0; }
   .push-admin-stats .stat-card span { overflow-wrap: anywhere; }
 }
+
+@layer views {
+  .pn-howto { margin-top: 6px; padding: 10px 14px; border-radius: var(--r-m); background: var(--surface-2); }
+  .pn-howto summary { font-weight: 700; font-size: var(--step--1); }
+  .pn-howto ol { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; }
+  .pn-howto code { font-size: .85em; overflow-wrap: anywhere; }
+}

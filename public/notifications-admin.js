@@ -75,6 +75,15 @@
           <button class="primary-btn" type="button" data-pn-act="send">Metti in invio</button>
           <p class="message" data-pn-msg></p>
           <p class="request-meta">Per farla partire subito senza aspettare: apri <a href="https://github.com/ChXxXxX9/quizfin/actions/workflows/notifiche.yml" target="_blank" rel="noopener">Notifiche su GitHub</a> e premi <strong>Run workflow</strong>.</p>
+          <details class="pn-howto">
+            <summary>Notifiche puntuali ogni 5 minuti (da fare una volta)</summary>
+            <p class="request-meta">GitHub fa partire da solo l'invio solo ogni qualche ora. Con un servizio gratuito che lo avvia ogni 5 minuti, promemoria, avvisi delle richieste e notifiche dello staff arrivano in pochi minuti.</p>
+            <ol class="request-meta">
+              <li>Su GitHub: foto profilo → <strong>Settings</strong> → <strong>Developer settings</strong> → <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong> → <strong>Generate new token</strong>. Nome: <em>Quiz Nuoto notifiche</em>; scadenza: la più lunga; <strong>Only select repositories</strong> → <em>quizfin</em>; in <strong>Repository permissions</strong> metti <strong>Actions: Read and write</strong>. Copia il token (non incollarlo da nessun'altra parte).</li>
+              <li>Su <a href="https://cron-job.org" target="_blank" rel="noopener">cron-job.org</a> (gratis): <strong>Create cronjob</strong>. URL: <code>https://api.github.com/repos/ChXxXxX9/quizfin/actions/workflows/notifiche.yml/dispatches</code>; ogni <strong>5 minuti</strong>.</li>
+              <li>Nella scheda <strong>Advanced</strong>: metodo <strong>POST</strong>; intestazioni <code>Authorization: Bearer</code> + il token, <code>Accept: application/vnd.github+json</code>, <code>X-GitHub-Api-Version: 2022-11-28</code>; corpo <code>{"ref":"main"}</code>. Salva e premi <strong>Test run</strong>: deve rispondere <strong>204</strong>.</li>
+            </ol>
+          </details>
         </div>
       </section>
 
@@ -86,6 +95,16 @@
           <label>Orari (ora italiana)</label>
           <div class="push-hours">${[12, 14, 16, 17, 18, 19, 20, 21, 22, 23].map((h) => `<label class="ann-chip"><input type="checkbox" data-pn-hour="${h}"><span>${h}:00</span></label>`).join('')}</div>
           <button class="secondary-btn" type="button" data-pn-act="save-settings">Salva promemoria</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title compact-title"><div><h3>Avvisi per l'admin</h3>
+          <p class="message">Una notifica sui dispositivi degli admin quando qualcuno chiede un account, l'accesso a un corso o un ricontrollo. Gli utenti non la ricevono.</p></div></div>
+        <div class="admin-form">
+          <label class="checkline"><input id="pnAdminReq" type="checkbox" /> Avvisami delle nuove richieste</label>
+          <p class="request-meta" data-pn-admin-devices></p>
+          <button class="secondary-btn" type="button" data-pn-act="save-admin">Salva</button>
         </div>
       </section>
 
@@ -131,14 +150,20 @@
       <div class="stat-card"><strong>${withPush.filter((u) => u.streak).length}</strong><span>con promemoria streak</span></div>
     </div>`;
     renderUsers();
+    const me = users.find((u) => u.uid === admin?.uid);
+    const devicesBox = $('[data-pn-admin-devices]');
+    if (devicesBox) devicesBox.textContent = me?.devices
+      ? `Il tuo account ha ${me.devices} ${me.devices === 1 ? 'dispositivo' : 'dispositivi'} con le notifiche attive.`
+      : 'Il tuo account non ha ancora dispositivi con le notifiche: attivale da Account sul telefono per ricevere gli avvisi.';
   }
   async function loadSettings() {
     try {
       const snap = await db().collection('courseSettings').doc('notifiche').get();
       const d = snap.exists ? (snap.data() || {}) : {};
-      settings = { streakReminders: d.streakReminders !== false, hours: Array.isArray(d.hours) && d.hours.length ? d.hours.map(Number) : DEFAULT_SETTINGS.hours };
+      settings = { streakReminders: d.streakReminders !== false, hours: Array.isArray(d.hours) && d.hours.length ? d.hours.map(Number) : DEFAULT_SETTINGS.hours, adminRequests: d.adminRequests !== false };
     } catch { settings = { ...DEFAULT_SETTINGS }; }
     $('#pnStreakOn').checked = settings.streakReminders;
+    $('#pnAdminReq').checked = settings.adminRequests !== false;
     root().querySelectorAll('[data-pn-hour]').forEach((i) => { i.checked = settings.hours.includes(Number(i.dataset.pnHour)); });
   }
   async function loadHistory() {
@@ -206,6 +231,13 @@
     } catch (error) { toast(`Non salvato: ${error.message}`); }
   }
 
+  async function saveAdminSettings() {
+    try {
+      await db().collection('courseSettings').doc('notifiche').set({ adminRequests: $('#pnAdminReq').checked, updatedAt: FV().serverTimestamp(), updatedBy: admin.uid }, { merge: true });
+      toast($('#pnAdminReq').checked ? 'Ti avviseremo delle nuove richieste.' : 'Avvisi delle richieste spenti.');
+    } catch (error) { toast(`Non salvato: ${error.message}`); }
+  }
+
   function bind() {
     const r = root();
     r.addEventListener('input', (e) => { if (e.target.id === 'pnUserSearch') renderUsers(); updatePreview(); });
@@ -214,6 +246,7 @@
       const act = e.target.closest('[data-pn-act]')?.dataset.pnAct;
       if (act === 'send') send();
       if (act === 'save-settings') saveSettings();
+      if (act === 'save-admin') saveAdminSettings();
       if (act === 'reload') { loadHistory(); loadUsers(); }
       const cancel = e.target.closest('[data-pn-cancel]');
       if (cancel) {
