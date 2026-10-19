@@ -37,7 +37,7 @@
   }
   function setupAuth(){
     const fb=window.FirebaseQuiz;
-    if(!fb?.configured){ setLoginState('Firebase non configurato','Configura firebase-config.js.','Errore'); return; }
+    if(!fb?.configured){ showLoginGate('Firebase non configurato','Configura firebase-config.js.','Errore'); return; }
     fb.auth.getRedirectResult?.().catch((error)=>setMessage(error.message));
     fb.auth.onAuthStateChanged(async (user)=>{
       currentUser=user; accountData=null; isAdmin=false; els.adminBtn?.classList.add('hidden');
@@ -47,19 +47,22 @@
         return;
       }
       try{
-        await ensureBootstrapAdmin(user);
-        isAdmin=await checkIsAdmin(user.uid);
+        // Letture in parallelo: meno attesa prima di vedere i corsi
+        const [adminFlag] = await Promise.all([
+          ensureBootstrapAdmin(user).catch(() => {}).then(() => checkIsAdmin(user.uid)),
+          loadCourseSettings()
+        ]);
+        if (currentUser !== user) return;
+        isAdmin = adminFlag;
         if(isAdmin) {
           els.adminBtn?.classList.remove('hidden');
           els.adminBellBtn?.classList.remove('hidden');
-          await loadAdminPendingCount();
+          loadAdminPendingCount();
         }
-        await loadCourseSettings();
-        const snap=await db().collection('users').doc(user.uid).get();
-        accountData=snap.exists ? snap.data() : {};
-        await ensureUserProfile(user, accountData);
+        let profileSaved = false;
         userUnsubscribe = db().collection('users').doc(user.uid).onSnapshot(async (docSnap) => {
           accountData = docSnap.exists ? (docSnap.data() || {}) : {};
+          if (!profileSaved) { profileSaved = true; ensureUserProfile(user, accountData).catch(() => {}); }
           await renderAccountState();
         }, (error) => {
           showStatusGate('Errore account', escapeHtml(error.message), 'Errore');
@@ -76,7 +79,7 @@
     if (isAdmin) {
       els.authCard.classList.add('hidden');
       els.authCard.classList.remove('status-gate-card');
-      els.mainContent.classList.remove('hidden');
+      els.mainContent.classList.remove('hidden'); unlockPage();
       els.logoutBtn.classList.remove('hidden');
       els.approvalActions?.classList.add('hidden');
       renderCourses();
@@ -131,7 +134,7 @@
 
     els.authCard.classList.add('hidden');
     els.authCard.classList.remove('status-gate-card');
-    els.mainContent.classList.remove('hidden');
+    els.mainContent.classList.remove('hidden'); unlockPage();
     els.logoutBtn.classList.remove('hidden');
     els.approvalActions?.classList.add('hidden');
     renderCourses();
@@ -155,7 +158,11 @@
     if (isAdmin || ca.arte === true) out.push('arte');
     return [...new Set(out)];
   }
+  // Finché non sappiamo cosa mostrare la pagina resta "bloccata" (si vede il caricamento, non il modulo di accesso)
+  function lockPage(){ document.body.classList.add('app-locked'); }
+  function unlockPage(){ document.body.classList.remove('app-locked'); }
   function showLoginGate(title, subtitle, status){
+    lockPage();
     els.authCard.classList.remove('hidden', 'status-gate-card');
     els.mainContent.classList.add('hidden');
     els.logoutBtn?.classList.add('hidden');
@@ -164,6 +171,7 @@
     setLoginState(title, subtitle, status);
   }
   function showStatusGate(title, html, status, opts={}){
+    lockPage();
     els.authCard.classList.remove('hidden');
     els.authCard.classList.add('status-gate-card');
     els.mainContent.classList.add('hidden');
@@ -230,7 +238,7 @@
       accountData.profile.emailVerified = true;
       els.authCard.classList.add('hidden');
       els.authCard.classList.remove('status-gate-card');
-      els.mainContent.classList.remove('hidden');
+      els.mainContent.classList.remove('hidden'); unlockPage();
       els.logoutBtn.classList.remove('hidden');
       els.approvalActions?.classList.add('hidden');
       renderCourses();

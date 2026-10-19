@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="announcements.css" />
   <link rel="stylesheet" href="account.css" />
 </head>
-<body class="course-portal">
+<body class="course-portal app-locked">
   <a class="skip-link" href="#authCard">Vai al contenuto</a>
 
   <header class="appbar">
@@ -33,7 +33,7 @@
   </header>
 
   <div class="page">
-    <section class="auth-card login-card" id="authCard" aria-labelledby="authTitle">
+    <section class="auth-card login-card hidden" id="authCard" aria-labelledby="authTitle">
       <div class="login-form-panel">
         <div class="auth-main">
           <div>
@@ -74,6 +74,7 @@
         </div>
       </div>
     </section>
+    <div class="boot" role="status"><div class="dial" aria-hidden="true"><span class="dial-major"></span></div><span>Verifica dell'accesso…</span></div>
 
     <main id="mainContent" class="hidden">
       <header class="home-head">

@@ -66,14 +66,20 @@
       currentUser = user;
       if (!user) { location.href='index.html'; return; }
       try {
-        isAdmin = await checkIsAdmin(user.uid);
-        const snap = await db().collection('users').doc(user.uid).get();
+        // Letture in parallelo: si entra prima nel corso
+        const [adminFlag, snap, courseSettingsFirst] = await Promise.all([
+          checkIsAdmin(user.uid),
+          db().collection('users').doc(user.uid).get(),
+          fetchCourseSettings()
+        ]);
+        if (currentUser !== user) return;
+        isAdmin = adminFlag;
         const data = snap.exists ? (snap.data() || {}) : {};
         currentProfile = data.profile || {};
         const access = data.access || {};
 
         if (!isAdmin) {
-          const courseSettingsSnap = await fetchCourseSettings();
+          const courseSettingsSnap = courseSettingsFirst;
           const siteSnap = FEATURE_SETTINGS.site || {};
           const systemGate = (kind, scope, title, reason) => {
             setGate(title, reason || '');

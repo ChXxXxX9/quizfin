@@ -366,6 +366,8 @@
     font-size: var(--step--1);
   }
   .boot .dial { --size: 64px; --p: 0; animation: bootSpin 1.6s linear infinite; }
+  .boot-slow { display: grid; justify-items: center; gap: 10px; max-width: 32ch; text-align: center; }
+  .boot-slow p { margin: 0; line-height: 1.45; }
   @keyframes bootSpin { to { transform: rotate(360deg); } }
 
   /* Contenuto nascosto finché l'accesso non è confermato */

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quiz-nuoto-v51_account-risultati';
+const CACHE_NAME = 'quiz-nuoto-v52_accesso-rapido';
 const APP_SHELL = [
   './',
   './index.html',
