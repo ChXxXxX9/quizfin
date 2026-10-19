@@ -7,7 +7,11 @@
   const LEGACY_STORAGE_KEY = COURSE_ID === 'istruttore' ? 'quizNuotoState.v1' : `quizNuotoState.${COURSE_ID}.legacy`;
   const QUESTIONS = Array.isArray(window.BAGNINO_QUESTIONS) ? window.BAGNINO_QUESTIONS : [];
   const QUESTIONS_BY_ID = new Map(QUESTIONS.map((q) => [q.id, q]));
-  const EXPLANATIONS = window.BAGNINO_EXPLANATIONS || {};
+  // Le spiegazioni sono un file grande: arrivano dopo la prima schermata (loadExplanations)
+  const EXPLANATIONS_GLOBAL = 'BAGNINO_EXPLANATIONS';
+  const EXPLANATIONS_SRC = 'bagnino_explanations.js';
+  let explanationsPromise = null;
+  const explanationsReady = () => Boolean(window[EXPLANATIONS_GLOBAL]);
   const LETTERS = ['A', 'B', 'C', 'D'];
   const TOPICS = [...new Set(QUESTIONS.map((q) => q.topic))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
   const LEGACY_TOPIC_ALIASES = { 'La cultura': 'La Cultura dell’Acqua' };
@@ -48,7 +52,10 @@
     state = loadLocalState();
     setupAuth();
     renderAll();
-    setInterval(() => { if (accessGranted && els.homeView?.classList.contains('active')) renderHomeProgress(); }, 1000);
+    // Le spiegazioni si caricano appena la pagina è libera
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1200));
+    if (document.readyState === 'complete') idle(() => loadExplanations(), { timeout: 2500 });
+    else window.addEventListener('load', () => idle(() => loadExplanations(), { timeout: 2500 }), { once: true });
   }
 
   function bindElements() {
@@ -961,9 +968,11 @@ ${html}`));
     els.topicSelect.innerHTML = TOPICS.map((topic) => `<option value="${escapeHtml(topic)}">${escapeHtml(topic)}</option>`).join('');
   }
 
+  // Le statistiche (con l'elenco di tutte le domande) si disegnano solo quando sono a schermo:
+  // aprendo la scheda Statistiche showView() le aggiorna comunque.
   function renderAll() {
     renderHomeProgress();
-    renderStats();
+    if (els.statsView?.classList.contains('active')) renderStats();
   }
 
 
@@ -1172,7 +1181,7 @@ ${html}`));
     const correctIndex = question.correctIndex;
     const correctLabel = question.labels?.[correctIndex] || LETTERS[correctIndex] || '';
     const correctAnswer = question.options?.[correctIndex] || '';
-    return EXPLANATIONS[String(question.id)] || {
+    return (window[EXPLANATIONS_GLOBAL] || {})[String(question.id)] || {
       id: question.id,
       topic: question.topic,
       correctLabel,
@@ -1206,9 +1215,34 @@ ${html}`));
     return cleanConceptExplanation(source);
   }
 
+  function loadExplanations() {
+    if (explanationsReady()) return Promise.resolve();
+    if (explanationsPromise) return explanationsPromise;
+    explanationsPromise = new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = EXPLANATIONS_SRC;
+      script.async = true;
+      script.onload = () => { fillPendingExplanations(); resolve(); };
+      script.onerror = () => { explanationsPromise = null; script.remove(); resolve(); };
+      document.head.appendChild(script);
+    });
+    return explanationsPromise;
+  }
+  // Se una spiegazione serve prima che il file sia arrivato, si mostra un segnaposto che si riempie da solo
+  function fillPendingExplanations() {
+    document.querySelectorAll('[data-expl-q]').forEach((el) => {
+      const question = QUESTIONS_BY_ID.get(Number(el.dataset.explQ));
+      if (question) el.outerHTML = renderExplanationBlock(question, { showAnswer: el.dataset.explShow === '1' });
+    });
+  }
+
   function renderExplanationBlock(question, options = {}) {
     const config = typeof options === 'object' && options !== null ? options : {};
     const showAnswer = Boolean(config.showAnswer);
+    if (!explanationsReady()) {
+      loadExplanations();
+      return `<div class="explanation-pending" data-expl-q="${question.id}" data-expl-show="${showAnswer ? 1 : 0}"><p class="message">Carico la spiegazione…</p></div>`;
+    }
     const exp = getExplanation(question);
     const correctIndex = question.correctIndex;
     const correctLabel = question.labels?.[correctIndex] || LETTERS[correctIndex] || '';
@@ -1805,10 +1839,11 @@ ${html}`));
       <div class="stat-card wide-stat examone-stat"><strong>${escapeHtml(getExamoneStatusLabel())}</strong><span>Esamone ufficiale${state.examone?.officialAttemptDone ? ` · ${state.examone.officialCorrect}/${EXAMONE_TOTAL} · migliore: ${state.examone.bestCorrect}/${EXAMONE_TOTAL}` : ' · bloccato fino al completamento del misto'}</span></div>
     `;
 
+    const mixedDoneSet = new Set(state.progress.mixedCompleted);
     els.topicProgressList.innerHTML = TOPICS.map((topic) => {
       const total = countTopicQuestions(topic);
       const topicDone = state.progress.topics[topic]?.length || 0;
-      const mixedDone = QUESTIONS.filter((q) => q.topic === topic && state.progress.mixedCompleted.includes(q.id)).length;
+      const mixedDone = QUESTIONS.filter((q) => q.topic === topic && mixedDoneSet.has(q.id)).length;
       const topicStats = state.byTopic[topic] || { answered: 0, correct: 0, wrong: 0 };
       const topicAccuracy = topicStats.answered ? Math.round((topicStats.correct / topicStats.answered) * 100) : 0;
       return `
@@ -1848,19 +1883,19 @@ ${html}`));
     return new Set(normalizeIdArray(ids));
   }
 
+  let allQuestionsKey = '';
+  let allQuestionsToken = 0;
   function renderAllQuestionsProgress() {
     if (!els.allQuestionsProgressList) return;
     const answered = getAnsweredQuestionIdSet();
     const done = answered.size;
-    els.allQuestionsProgressList.innerHTML = `
-      <div class="all-questions-summary">
-        <div><strong>${done}</strong><span>Domande fatte almeno una volta</span></div>
-        <div class="mini-progress"><span style="width:${percent(done, TOTAL_QUESTIONS)}%"></span></div>
-        <div class="topic-values">${done} / ${TOTAL_QUESTIONS}</div>
-      </div>
-      <p class="message small-note">Puoi rimuovere manualmente una domanda dalle “fatte”: tornerà disponibile nei quiz. Prima della rimozione viene sempre richiesta conferma.</p>
-      <div class="all-questions-grid">
-        ${QUESTIONS.map((q) => {
+    let idSum = 0;
+    answered.forEach((id) => { idSum += Number(id) || 0; });
+    const key = `${done}:${idSum}`;
+    if (key === allQuestionsKey && els.allQuestionsProgressList.firstElementChild) return;
+    allQuestionsKey = key;
+    // Prima le prime domande, il resto a pezzi quando il telefono è libero: la scheda si apre subito
+    const itemHtml = (q) => {
           const isDone = answered.has(q.id);
           return `
             <div class="question-check ${isDone ? 'done' : ''}">
@@ -1872,10 +1907,31 @@ ${html}`));
               </div>
             </div>
           `;
-        }).join('')}
+    };
+    const FIRST = 40;
+    els.allQuestionsProgressList.innerHTML = `
+      <div class="all-questions-summary">
+        <div><strong>${done}</strong><span>Domande fatte almeno una volta</span></div>
+        <div class="mini-progress"><span style="width:${percent(done, TOTAL_QUESTIONS)}%"></span></div>
+        <div class="topic-values">${done} / ${TOTAL_QUESTIONS}</div>
       </div>
+      <p class="message small-note">Puoi rimuovere manualmente una domanda dalle “fatte”: tornerà disponibile nei quiz. Prima della rimozione viene sempre richiesta conferma.</p>
+      <div class="all-questions-grid">${QUESTIONS.slice(0, FIRST).map(itemHtml).join('')}</div>
     `;
+    const grid = els.allQuestionsProgressList.querySelector('.all-questions-grid');
+    const token = ++allQuestionsToken;
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 16));
+    let next = FIRST;
+    const step = () => {
+      if (token !== allQuestionsToken || !grid.isConnected) return;
+      const end = Math.min(QUESTIONS.length, next + 120);
+      grid.insertAdjacentHTML('beforeend', QUESTIONS.slice(next, end).map(itemHtml).join(''));
+      next = end;
+      if (next < QUESTIONS.length) idle(step, { timeout: 300 });
+    };
+    if (next < QUESTIONS.length) idle(step, { timeout: 300 });
   }
+
 
   function renderScoreTrend() {
     const items = state.stats.history.slice(0, 10).reverse();
@@ -2064,7 +2120,8 @@ ${html}`));
     });
     if (viewId === 'homeView') renderHomeProgress();
     if (viewId === 'statsView') renderStats();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // in cima subito: lo scorrimento animato faceva sembrare lento ogni cambio di schermata
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }
 
   function setBar(el, value) {

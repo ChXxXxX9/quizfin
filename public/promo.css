@@ -58,18 +58,29 @@
 
 /* ---------------- Pezzi in comune ---------------- */
 
-/* Corda di corsia che scorre */
+/* Corda di corsia che scorre: si muove con transform (lo fa la scheda grafica, senza ridisegnare) */
 .nf-rope {
+  position: relative;
   height: 12px;
+  overflow: hidden;
+}
+.nf-rope::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -280px;
+  width: calc(100% + 280px);
   background:
     radial-gradient(circle, var(--nf-corda) 0 5px, transparent 5.6px) 0 50% / 28px 12px repeat-x,
     radial-gradient(circle, #f4f8fc 0 5px, transparent 5.6px) 14px 50% / 28px 12px repeat-x,
     linear-gradient(transparent 5px, rgba(141, 169, 196, .6) 5px 7px, transparent 7px);
   animation: nfRope 18s linear infinite;
+  will-change: transform;
 }
 @keyframes nfRope {
-  from { background-position: 0 50%, 14px 50%, 0 0; }
-  to { background-position: 280px 50%, 294px 50%, 0 0; }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(280px, 0, 0); }
 }
 
 /* Targhetta luminosa "NUOVA APP" */
@@ -367,7 +378,7 @@ html.nf-lock, html.nf-lock body { overflow: hidden !important; }
   100% { transform: translate3d(-10px, -112vh, 0); opacity: 0; }
 }
 
-.nf-overlay > .nf-rope { position: fixed; left: 0; right: 0; top: 0; z-index: 3; top: env(safe-area-inset-top); animation: nfRope 18s linear infinite, nfSlideIn .7s var(--nf-ease) .25s backwards; }
+.nf-overlay > .nf-rope { position: fixed; left: 0; right: 0; top: 0; z-index: 3; top: env(safe-area-inset-top); animation: nfSlideIn .7s var(--nf-ease) .25s backwards; }
 @keyframes nfSlideIn { from { transform: translateX(-100%); } }
 
 .nf-close {
@@ -750,4 +761,11 @@ a.nf-banner:focus-visible { outline: 3px solid #6ee7ff; outline-offset: 3px; }
   }
   .nf-notif:first-child { opacity: 1; transform: none; }
   .nf-bubbles { display: none; }
+}
+
+/* Leggerezza: fuori dallo schermo il banner è fermo; dopo l'entrata i riflessi d'acqua e i bagliori
+   (sfocature e fusioni di colore, i pezzi più pesanti da disegnare) restano immobili nella loro posa. */
+.nf-banner.is-offscreen, .nf-banner.is-offscreen *, .nf-banner.is-offscreen *::before, .nf-banner.is-offscreen *::after,
+.nf-banner.is-settled .nf-glow, .nf-banner.is-settled .nf-water::before, .nf-banner.is-settled .nf-water::after {
+  animation-play-state: paused !important;
 }

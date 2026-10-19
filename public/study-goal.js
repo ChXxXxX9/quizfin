@@ -453,10 +453,15 @@
     return null;
   }
 
+  // Ultimo valore già sincronizzato per corso: niente letture dal database se non è cambiato niente
+  const lastSyncedUnits = new Map();
   async function syncCourseProgress(course, completedUnits) {
+    const value = Math.max(0, Number(completedUnits || 0));
+    const key = `${currentUser?.uid || ''}:${course}`;
+    if (lastSyncedUnits.get(key) === value) return;
+    lastSyncedUnits.set(key, value);
     const goal = await readGoal(course);
     if (!goal) return;
-    const value = Math.max(0, Number(completedUnits || 0));
     if (value === goal.courseCompletedUnits) return;
     try {
       await goalRef(course).set({
@@ -585,6 +590,7 @@
     return `<span class="study-countdown ${extraClass}" data-study-countdown role="timer" aria-label="Tempo che resta fino a mezzanotte"><span data-cd="h">--</span><i>:</i><span data-cd="m">--</span><i>:</i><span class="study-cd-s" data-cd="s">--</span></span>`;
   }
   let countdownTimer = null;
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   let countdownDay = '';
   function tickCountdowns() {
     const nodes = document.querySelectorAll('[data-study-countdown]');
@@ -599,10 +605,10 @@
         const part = node.querySelector(`[data-cd="${k}"]`);
         if (!part || part.textContent === values[k]) return;
         part.textContent = values[k];
-        // "tac": la cifra che cambia scende di scatto
-        part.classList.remove('is-tick');
-        void part.offsetWidth;
-        part.classList.add('is-tick');
+        // "tac": la cifra che cambia scende di scatto (animazione senza ricalcolare la pagina)
+        if (!reduceMotion && part.animate) {
+          part.animate([{ transform: 'translateY(-60%)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 340, easing: 'cubic-bezier(.2, .9, .3, 1.35)' });
+        }
       });
       node.classList.toggle('is-urgent', left < 3600);
       node.classList.toggle('is-close', left >= 3600 && left < 3 * 3600);

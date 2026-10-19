@@ -273,6 +273,20 @@
     if (!config.bannerEnabled) { slot.innerHTML = ''; slot.hidden = true; return; }
     slot.hidden = false;
     slot.innerHTML = bannerHtml();
+    lightenBanner(slot.querySelector('.nf-banner'));
+  }
+  // Animazioni solo quando servono: ferme fuori schermo, effetti pesanti fermi dopo l'entrata
+  let bannerObserver = null;
+  function lightenBanner(banner) {
+    if (!banner) return;
+    bannerObserver?.disconnect();
+    if ('IntersectionObserver' in window) {
+      bannerObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => entry.target.classList.toggle('is-offscreen', !entry.isIntersecting));
+      }, { rootMargin: '80px 0px' });
+      bannerObserver.observe(banner);
+    }
+    setTimeout(() => banner.classList.add('is-settled'), 9000);
   }
 
   /* ---------------- Quando mostrare il popup ---------------- */
