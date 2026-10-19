@@ -88,8 +88,9 @@ controlla che **Firebase Cloud Messaging API** sia attiva. Prove della logica: `
 ## Aggiornare il sito
 
 Modifica i file dentro `public/` (o sostituiscili con quelli di una nuova versione) e fai commit su `main`.
-Ricordati di cambiare `CACHE_NAME` in `public/service-worker.js` a ogni versione, così telefoni e app
-installate scaricano subito la nuova grafica.
+Il sito si apre dalla cache del telefono (service worker) per essere istantaneo: a ogni pubblicazione il lavoro
+aggiunge da solo il codice del commit a `CACHE_NAME`, quindi telefoni e app installate prendono la versione nuova
+al massimo dalla pagina successiva, senza doverlo cambiare a mano.
 
 ## Prove in locale (facoltativo)
 

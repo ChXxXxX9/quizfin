@@ -305,7 +305,7 @@
     document.querySelectorAll('[data-account-open]').forEach((b) => { b.hidden = !u; });
     if (!u) { remountAll(); return; }
     try {
-      const snap = await db().collection('users').doc(u.uid).get();
+      const snap = await (fq().getUserDoc ? fq().getUserDoc(u.uid) : db().collection('users').doc(u.uid).get());
       profile = snap.exists ? (snap.data()?.profile || {}) : {};
     } catch { profile = {}; }
     remountAll();

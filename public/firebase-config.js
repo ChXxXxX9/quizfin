@@ -76,10 +76,24 @@
       if (!user) setTimeout(warmPopup, 600);
     });
 
+    const db = firebase.firestore();
+    // Il documento dell'utente serve a più pezzi della pagina (notifiche, account…):
+    // una sola lettura condivisa invece di tante uguali nello stesso momento.
+    const userDocCache = new Map();
+    const getUserDoc = (uid, maxAgeMs = 5000) => {
+      const hit = userDocCache.get(uid);
+      if (hit && Date.now() - hit.at < maxAgeMs) return hit.promise;
+      const promise = db.collection('users').doc(uid).get();
+      userDocCache.set(uid, { at: Date.now(), promise });
+      promise.catch(() => userDocCache.delete(uid));
+      return promise;
+    };
+
     window.FirebaseQuiz = {
       configured: true,
       auth,
-      db: firebase.firestore(),
+      db,
+      getUserDoc,
       googleProvider: new firebase.auth.GoogleAuthProvider(),
       likelySignedIn,
       warmPopup,

@@ -99,6 +99,14 @@ jobs:
               || { echo "::error::Non riesco a creare il sito quiznuoto: forse il nome è già usato da un altro progetto. Crealo dalla console (Hosting → Aggiungi un altro sito) o scegli un altro nome in firebase.json."; exit 1; }
           fi
 
+      # Ogni pubblicazione ha la sua versione di cache: telefoni e app installate prendono
+      # sempre i file nuovi, anche se ci si dimentica di cambiare CACHE_NAME a mano.
+      - name: Versione della cache legata alla pubblicazione
+        run: |
+          corto="${GITHUB_SHA::7}"
+          sed -i -E "s/const CACHE_NAME = '([^']*)';/const CACHE_NAME = '\1-${corto}';/" public/service-worker.js
+          grep -m1 "CACHE_NAME" public/service-worker.js
+
       - name: Pubblica sito e regole
         run: |
           set -o pipefail

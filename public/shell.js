@@ -70,6 +70,7 @@
 
   /* ---------------- Aggiornamento coalescente ---------------- */
   let queued = false;
+  let themeDirty = true;
   function schedule() {
     if (queued) return;
     queued = true;
@@ -77,8 +78,21 @@
       queued = false;
       syncView();
       syncDials();
-      syncThemeColor();
+      if (themeDirty) { themeDirty = false; syncThemeColor(); }
     });
+  }
+  // Cambi che non riguardano viste, quadranti o tema (il conto alla rovescia ogni secondo,
+  // le animazioni del banner) non fanno ricalcolare niente: meno lavoro, tocchi più pronti.
+  const IGNORE_MUTATIONS = '[data-study-countdown], .nf-banner, .toast';
+  function onMutations(records) {
+    let relevant = false;
+    for (const r of records) {
+      const el = r.target.nodeType === 1 ? r.target : r.target.parentElement;
+      if (el && el.closest && el.closest(IGNORE_MUTATIONS)) continue;
+      relevant = true;
+      if (el === body && r.attributeName === 'class') themeDirty = true;
+    }
+    if (relevant) schedule();
   }
 
   /* ---------------- Tema ---------------- */
@@ -93,6 +107,7 @@
     mq?.addEventListener?.('change', (e) => {
       if (storedTheme()) return;
       body.classList.toggle('dark', e.matches);
+      themeDirty = true;
       schedule();
     });
   }
@@ -228,7 +243,7 @@
     onScroll();
     syncNetwork();
 
-    new MutationObserver(schedule).observe(body, {
+    new MutationObserver(onMutations).observe(body, {
       subtree: true,
       attributes: true,
       attributeFilter: ['class', 'style', 'hidden'],

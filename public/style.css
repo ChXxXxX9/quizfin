@@ -1797,3 +1797,10 @@
   .system-gate-actions { display: grid; gap: 10px; margin-top: 24px; }
   .system-gate-actions > * { width: 100%; }
 }
+
+/* ---------- Velocità: gli elementi fuori schermo degli elenchi lunghi non si impaginano finché non servono ---------- */
+@layer views {
+  .all-questions-grid > .question-check { content-visibility: auto; contain-intrinsic-size: auto 96px; }
+  .answers-review > .review-item { content-visibility: auto; contain-intrinsic-size: auto 260px; }
+  .history-list > *, .marked-list > *, .score-trend-list > * { content-visibility: auto; contain-intrinsic-size: auto 72px; }
+}

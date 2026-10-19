@@ -282,7 +282,7 @@
     message = '';
     if (!u) { render(); return; }
     try {
-      const snap = await db().collection('users').doc(u.uid).get();
+      const snap = await (fq().getUserDoc ? fq().getUserDoc(u.uid) : db().collection('users').doc(u.uid).get());
       const data = snap.exists ? (snap.data() || {}) : {};
       pushData = data.push || {};
       profileSeen = data.profile?.promoSeen || {};
