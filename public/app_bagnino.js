@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const errText = (e) => (window.QuizErrors ? window.QuizErrors.text(e) : (e?.message || String(e)));
 
   const COURSE_ID = 'bagnino';
   const COURSE_LABEL = 'Assistenti Bagnanti Piscina';
@@ -33,6 +34,14 @@
   let accessGranted = false;
   let currentIsAdmin = false;
   let saveTimer = null;
+  // Il cloud si scrive solo dopo averlo letto in questa sessione: una pagina appena aperta
+  // non può mai sovrascrivere i progressi salvati con uno stato vuoto o parziale.
+  let cloudReady = false;
+  let saveSeq = 0;
+  let cloudRetryTimer = null;
+  // Azzeramento voluto dall'utente: il database lo accetta solo con progressResetAt (vedi firestore.rules)
+  let progressResetPending = 0;
+  function markProgressReset() { progressResetPending = Date.now(); }
   let activeQuiz = null;
   let pendingQuiz = null;
   let lastWrongIds = [];
@@ -356,16 +365,123 @@
   }
 
   function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* memoria del browser piena o bloccata */ }
     if (!currentUser || !window.FirebaseQuiz?.configured) return;
+    const uid = currentUser.uid;
+    // Finché il cloud non è stato letto i cambi restano sul dispositivo, segnati "da sincronizzare"
+    writeLocalMeta({ uid, pending: true, at: Date.now() });
+    if (!cloudReady) return;
+    const seq = ++saveSeq;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
+      const resetMark = progressResetPending;
       try {
-        await userDocRef().set(state, { merge: true });
+        const payload = resetMark ? { ...state, progressResetAt: firebase.firestore.FieldValue.serverTimestamp() } : state;
+        await userDocRef().set(payload, { merge: true });
+        if (resetMark && progressResetPending === resetMark) progressResetPending = 0;
+        if (seq === saveSeq && currentUser?.uid === uid) writeLocalMeta({ uid, pending: false, at: Date.now() });
       } catch (error) {
-        showAuthMessage(`Salvataggio cloud non riuscito: ${error.message}`);
+        showAuthMessage(`Salvataggio cloud non riuscito: ${errText(error)}`);
       }
     }, 350);
+  }
+
+  /* ---- Copia sul dispositivo: di chi è e se ha cambi non ancora sul cloud ---- */
+  const META_KEY = `${STORAGE_KEY}.meta`;
+  function readLocalMeta() {
+    try { return JSON.parse(localStorage.getItem(META_KEY) || 'null'); } catch { return null; }
+  }
+  function writeLocalMeta(meta) {
+    try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch { /* niente */ }
+  }
+  // Salvataggi di versioni precedenti (senza proprietario): li consideriamo di questo account solo se
+  // sul dispositivo non c'è traccia di altri account (le chiavi per utente contengono l'uid).
+  function deviceOnlyUsedBy(uid) {
+    try {
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const parts = String(localStorage.key(i) || '').split(':');
+        if (parts.some((part) => /^[A-Za-z0-9]{28}$/.test(part) && part !== uid)) return false;
+      }
+      return true;
+    } catch { return false; }
+  }
+  function localBelongsTo(uid) {
+    const meta = readLocalMeta();
+    return meta ? meta.uid === uid : deviceOnlyUsedBy(uid);
+  }
+  function progressSize(s) {
+    return (s?.progress?.allAnswered?.length || 0) + (s?.progress?.mixedCompleted?.length || 0) + (s?.markedQuestions?.length || 0) + Number(s?.stats?.quizCount || 0) + Number(s?.flashStats?.total || 0);
+  }
+  // Copia locale da unire al cloud: solo se è di questo account e ha cambi non arrivati sul cloud
+  // (oppure è un salvataggio di una versione precedente, mai segnato come sincronizzato).
+  function localStateToMerge(uid) {
+    const meta = readLocalMeta();
+    if (meta && (meta.uid !== uid || !meta.pending)) return null;
+    if (!meta && !deviceOnlyUsedBy(uid)) return null;
+    const local = loadLocalState();
+    return progressSize(local) > 0 ? local : null;
+  }
+
+  function unionIds(a, b) {
+    return normalizeIdArray([...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])]);
+  }
+  function unionStrings(a, b) {
+    return [...new Set([...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])].map(String))];
+  }
+  // Unisce due copie dei progressi senza perdere niente: domande fatte, sbagliate e segnate si sommano,
+  // per i contatori vale la copia più avanti.
+  function unionStates(cloud, local) {
+    const out = deepClone(cloud);
+    ['mixedCompleted', 'allAnswered', 'mixedCycleSeen'].forEach((key) => {
+      out.progress[key] = unionIds(cloud.progress?.[key], local.progress?.[key]);
+    });
+    TOPICS.forEach((topic) => {
+      out.progress.topics[topic] = unionIds(cloud.progress?.topics?.[topic], local.progress?.topics?.[topic]);
+      out.progress.topicsCycle[topic] = unionIds(cloud.progress?.topicsCycle?.[topic], local.progress?.topicsCycle?.[topic]);
+      out.wrong.topics[topic] = unionIds(cloud.wrong?.topics?.[topic], local.wrong?.topics?.[topic]);
+      const bc = cloud.byTopic?.[topic] || { answered: 0, correct: 0, wrong: 0 };
+      const bl = local.byTopic?.[topic] || { answered: 0, correct: 0, wrong: 0 };
+      out.byTopic[topic] = Number(bl.answered || 0) > Number(bc.answered || 0) ? { ...bl } : { ...bc };
+      out.mixedTopicErrors[topic] = Math.max(Number(cloud.mixedTopicErrors?.[topic] || 0), Number(local.mixedTopicErrors?.[topic] || 0));
+    });
+    out.wrong.mixed = unionIds(cloud.wrong?.mixed, local.wrong?.mixed);
+    out.markedQuestions = unionIds(cloud.markedQuestions, local.markedQuestions);
+
+    const cs = cloud.stats || {};
+    const ls = local.stats || {};
+    const localAhead = Number(ls.quizCount || 0) > Number(cs.quizCount || 0)
+      || (Number(ls.quizCount || 0) === Number(cs.quizCount || 0) && Number(ls.totalAnswered || 0) > Number(cs.totalAnswered || 0));
+    out.stats = deepClone(localAhead ? ls : cs);
+    const seen = new Set();
+    out.stats.history = [...(cs.history || []), ...(ls.history || [])]
+      .filter((item) => {
+        const key = `${item?.date || ''}|${item?.mode || ''}|${item?.total || ''}|${item?.correct || ''}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => String(b?.date || '').localeCompare(String(a?.date || '')))
+      .slice(0, MAX_HISTORY);
+
+    if (!(out.recentMixedQuizErrors || []).length && (local.recentMixedQuizErrors || []).length) out.recentMixedQuizErrors = deepClone(local.recentMixedQuizErrors);
+    if (Number(local.hintStats?.used || 0) > Number(cloud.hintStats?.used || 0)) out.hintStats = { ...local.hintStats };
+    if (Number(local.flashStats?.total || 0) > Number(cloud.flashStats?.total || 0)) out.flashStats = { ...local.flashStats };
+    if (local.examone && cloud.examone) {
+      if (!cloud.examone.officialAttemptDone && local.examone.officialAttemptDone) out.examone = deepClone(local.examone);
+      out.examone.bestCorrect = Math.max(Number(cloud.examone.bestCorrect || 0), Number(local.examone.bestCorrect || 0));
+      if ((local.examone.attempts || []).length > (out.examone.attempts || []).length) out.examone.attempts = deepClone(local.examone.attempts);
+    }
+    if (local.ripassone && cloud.ripassone) {
+      const firsts = [cloud.ripassone.firstSeenAt, local.ripassone.firstSeenAt].filter(Boolean).sort();
+      out.ripassone.firstSeenAt = firsts[0] || null;
+      if ((local.ripassone.history || []).length > (out.ripassone.history || []).length) out.ripassone.history = deepClone(local.ripassone.history);
+    }
+    if (out.system) {
+      out.system.migrations = unionStrings(cloud.system?.migrations, local.system?.migrations);
+      out.system.noticesSeen = unionStrings(cloud.system?.noticesSeen, local.system?.noticesSeen);
+      out.system.badgesAnnounced = unionStrings(cloud.system?.badgesAnnounced, local.system?.badgesAnnounced);
+    }
+    return out;
   }
 
   function accountDocRef() {
@@ -388,10 +504,12 @@
       return;
     }
 
-    fb.auth.getRedirectResult?.().catch((error) => showAuthMessage(error.message));
+    fb.auth.getRedirectResult?.().catch((error) => showAuthMessage(errText(error)));
 
     fb.auth.onAuthStateChanged(async (user) => {
       currentUser = user;
+      cloudReady = false;
+      clearTimeout(saveTimer);
       accessGranted = false;
       currentIsAdmin = false;
       els.adminBtn?.classList.add('hidden');
@@ -435,7 +553,7 @@
           els.authSubtitle.textContent = 'Accesso admin attivo. Nessuna verifica email richiesta.';
           els.authStatus.textContent = 'Admin';
           setAuthControls('signedIn');
-          await loadCloudState();
+          await loadCloudState(COURSE_ID === 'istruttore' ? accountSnap : null);
           await loadAnnouncements();
           return;
         }
@@ -506,10 +624,10 @@
         els.authStatus.textContent = currentIsAdmin ? 'Admin' : 'Cloud';
         setAuthControls('signedIn');
         applyFeatureGatingUI();
-        await loadCloudState();
+        await loadCloudState(COURSE_ID === 'istruttore' ? accountSnap : null);
         await loadAnnouncements();
       } catch (error) {
-        lockApp('Errore account', escapeHtml(error.message), 'Errore');
+        lockApp('Errore account', escapeHtml(errText(error)), 'Errore');
         setAuthControls('blocked');
       }
     });
@@ -633,21 +751,46 @@
     await accountDocRef().set(payload, { merge: true });
   }
 
-  async function loadCloudState() {
+  // Legge i progressi dal cloud. `prefetched` è la lettura del documento già fatta all'accesso (Istruttore):
+  // si usa quella perché è stata presa prima di qualsiasi scrittura della pagina.
+  async function loadCloudState(prefetched = null) {
+    const user = currentUser;
+    if (!user) return;
+    cloudReady = false;
+    clearTimeout(saveTimer);
+    clearTimeout(cloudRetryTimer);
     try {
-      const snap = await userDocRef().get();
-      if (snap.exists) {
-        state = mergeState(createDefaultState(), snap.data());
-      } else {
-        await userDocRef().set(state, { merge: true });
+      let snap = prefetched && !prefetched.metadata?.hasPendingWrites ? prefetched : null;
+      if (!snap) {
+        snap = await userDocRef().get();
+        // Con una scrittura in sospeso sullo stesso documento il database può restituire una copia
+        // parziale (solo i campi appena scritti): in quel caso si rilegge dal server.
+        if (snap.metadata?.hasPendingWrites) snap = await userDocRef().get({ source: 'server' });
       }
+      if (currentUser !== user) return;
+      const cloudState = snap.exists ? mergeState(createDefaultState(), snap.data()) : createDefaultState();
+      const local = localStateToMerge(user.uid);
+      const merged = local ? unionStates(cloudState, local) : cloudState;
+      const recovered = Boolean(local) && progressSize(merged) > progressSize(cloudState);
+      state = merged;
+      cloudReady = true;
       saveState();
       renderAll();
       checkBadgeUnlocks(false);
+      if (recovered) showToast('Abbiamo recuperato i progressi salvati su questo dispositivo.');
     } catch (error) {
-      showAuthMessage(`Caricamento cloud non riuscito: ${error.message}`);
-      state = loadLocalState();
+      if (currentUser !== user) return;
+      // Niente scritture sul cloud finché non si riesce a leggerlo: si studia sul dispositivo e si riprova
+      showAuthMessage(`Caricamento cloud non riuscito: ${errText(error)} I progressi restano su questo dispositivo e si sincronizzano appena possibile.`);
+      state = localBelongsTo(user.uid) ? loadLocalState() : createDefaultState();
       renderAll();
+      const retry = () => {
+        clearTimeout(cloudRetryTimer);
+        window.removeEventListener('online', retry);
+        if (currentUser === user && !cloudReady) loadCloudState();
+      };
+      window.addEventListener('online', retry);
+      cloudRetryTimer = setTimeout(retry, 20000);
     }
   }
 
@@ -746,7 +889,7 @@ ${html}`));
       await window.FirebaseQuiz.auth.signInWithEmailAndPassword(email, password);
       showAuthMessage('Accesso eseguito.');
     } catch (error) {
-      showAuthMessage(error.message);
+      showAuthMessage(errText(error));
     }
   }
 
@@ -788,7 +931,7 @@ ${html}`));
       els.requestGoogleStatus.textContent = `Google collegato: ${user.email || user.uid}`;
       await window.FirebaseQuiz.auth.signOut();
     } catch (error) {
-      els.requestGoogleStatus.textContent = error.message;
+      els.requestGoogleStatus.textContent = errText(error);
     }
   }
 
@@ -826,7 +969,7 @@ ${html}`));
       try { await window.FirebaseQuiz.auth.signInWithEmailAndPassword(email, password); } catch {}
       setTimeout(closeAccountRequestModal, 1200);
     } catch (error) {
-      els.accountRequestMessage.textContent = error.message;
+      els.accountRequestMessage.textContent = errText(error);
     } finally {
       if (els.submitAccountRequestBtn) els.submitAccountRequestBtn.disabled = false;
     }
@@ -858,7 +1001,7 @@ ${html}`));
       await window.FirebaseQuiz.auth.currentUser?.reload?.();
       location.reload();
     } catch (error) {
-      els.termsMessage.textContent = error.message;
+      els.termsMessage.textContent = errText(error);
     } finally {
       if (els.acceptTermsBtn) els.acceptTermsBtn.disabled = false;
     }
@@ -872,7 +1015,7 @@ ${html}`));
       await window.FirebaseQuiz.auth.sendPasswordResetEmail(email);
       showAuthMessage('Email di reimpostazione password inviata.');
     } catch (error) {
-      showAuthMessage(error.message);
+      showAuthMessage(errText(error));
     }
   }
 
@@ -883,7 +1026,7 @@ ${html}`));
       await user.sendEmailVerification({ url: `${location.origin}${location.pathname.replace(/[^/]*$/, '')}index.html?emailVerified=1`, handleCodeInApp: false });
       showAuthMessage('Email di verifica reinviata. Controlla anche spam/promozioni.');
     } catch (error) {
-      showAuthMessage(error.message);
+      showAuthMessage(errText(error));
     }
   }
 
@@ -897,7 +1040,7 @@ ${html}`));
         await window.FirebaseQuiz.auth.signInWithRedirect(window.FirebaseQuiz.googleProvider);
         return;
       }
-      showAuthMessage(error.message);
+      showAuthMessage(errText(error));
     }
   }
 
@@ -2077,6 +2220,7 @@ ${html}`));
     const ok = confirm(`Sei sicuro di voler rimuovere la domanda #${q.id} dalle domande fatte?\n\nPotrà ricapitarti nei quiz. Le statistiche storiche non vengono cancellate.`);
     if (!ok) return;
     const result = scrubQuestionIdsFromProgress([q.id]);
+    markProgressReset();
     saveState();
     renderAll();
     showToast(result.removedOccurrences > 0 ? `Domanda #${q.id} rimossa dalle domande fatte.` : `Domanda #${q.id} non era nei progressi.`);
@@ -2086,6 +2230,7 @@ ${html}`));
     if (!confirm('Resetti solo i progressi del quiz misto? Le statistiche restano.')) return;
     state.progress.mixedCompleted = [];
     state.progress.mixedCycleSeen = [];
+    markProgressReset();
     saveState();
     renderAll();
     showToast('Progressi misto resettati.');
@@ -2097,6 +2242,7 @@ ${html}`));
     state.progress.topics[topic] = [];
     state.progress.topicsCycle = state.progress.topicsCycle || {};
     state.progress.topicsCycle[topic] = [];
+    markProgressReset();
     saveState();
     renderAll();
     showToast(`Progressi ${topic} resettati.`);
@@ -2105,6 +2251,7 @@ ${html}`));
   function resetAllData() {
     if (!confirm('Azzera TUTTI i tuoi dati: progressi, errori e statistiche?')) return;
     state = createDefaultState();
+    markProgressReset();
     saveState();
     renderAll();
     showToast('Dati azzerati.');

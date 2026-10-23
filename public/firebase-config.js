@@ -5,6 +5,50 @@
 */
 
 (function () {
+  // Messaggi d'errore in italiano comprensibile (al posto di "Firebase: Error (auth/...)")
+  const MESSAGGI = {
+    'auth/invalid-credential': 'Email o password non corrette.',
+    'auth/invalid-login-credentials': 'Email o password non corrette.',
+    'auth/wrong-password': 'Email o password non corrette.',
+    'auth/user-not-found': 'Non esiste un account con questa email.',
+    'auth/invalid-email': 'L’email non è scritta correttamente.',
+    'auth/missing-password': 'Scrivi la password.',
+    'auth/missing-email': 'Scrivi l’email.',
+    'auth/too-many-requests': 'Troppi tentativi: aspetta qualche minuto e riprova.',
+    'auth/network-request-failed': 'Connessione assente o instabile: controlla la rete e riprova.',
+    'auth/user-disabled': 'Questo account è disattivato: contatta lo staff.',
+    'auth/email-already-in-use': 'Esiste già un account con questa email: accedi invece di registrarti.',
+    'auth/weak-password': 'La password è troppo debole: usa almeno 6 caratteri.',
+    'auth/popup-closed-by-user': 'Accesso con Google annullato.',
+    'auth/cancelled-popup-request': 'Accesso con Google annullato.',
+    'auth/popup-blocked': 'Il browser ha bloccato la finestra di Google: consenti i popup e riprova.',
+    'auth/unauthorized-domain': 'L’accesso con Google non è attivo per questo indirizzo: avvisa lo staff.',
+    'auth/operation-not-allowed': 'Questo tipo di accesso non è attivo: avvisa lo staff.',
+    'auth/account-exists-with-different-credential': 'Questa email è già registrata con un altro metodo di accesso (email e password oppure Google).',
+    'auth/credential-already-in-use': 'Questo account Google è già collegato a un altro utente.',
+    'auth/requires-recent-login': 'Per sicurezza esci, rientra e riprova.',
+    'auth/internal-error': 'Errore temporaneo dell’accesso: riprova tra poco.',
+    'auth/web-storage-unsupported': 'Il browser blocca i dati del sito (navigazione privata?): non si può restare collegati.',
+    'auth/user-token-expired': 'La sessione è scaduta: accedi di nuovo.',
+    'auth/expired-action-code': 'Il link è scaduto: chiedine uno nuovo.',
+    'auth/invalid-action-code': 'Il link non è più valido: chiedine uno nuovo.',
+    'permission-denied': 'Operazione non permessa per questo account.',
+    'unavailable': 'Server non raggiungibile: controlla la connessione e riprova.',
+    'resource-exhausted': 'Il sito ha raggiunto il limite di uso per oggi: riprova più tardi.',
+    'deadline-exceeded': 'Il server ci sta mettendo troppo: riprova.',
+    'unauthenticated': 'La sessione è scaduta: accedi di nuovo.'
+  };
+  window.QuizErrors = {
+    text(error) {
+      const code = String(error?.code || '').replace(/^firestore\//, '');
+      if (MESSAGGI[code]) return MESSAGGI[code];
+      const msg = String(error?.message || error || 'Operazione non riuscita.');
+      const found = msg.match(/\((auth\/[a-z-]+)\)/);
+      if (found && MESSAGGI[found[1]]) return MESSAGGI[found[1]];
+      return msg.replace(/^Firebase:\s*/, '').replace(/\s*\((auth|firestore)\/[a-z-]+\)\.?$/, '').trim() || 'Operazione non riuscita.';
+    }
+  };
+
   const firebaseConfig = {
     apiKey: "AIzaSyB5bAu2rxrJaXi7Fe6xA9mjwqL5YxZaPM8",
     authDomain: "quiz-fin.firebaseapp.com",
@@ -40,12 +84,24 @@
     return;
   }
 
+  // Prove automatiche: solo sul computer di prova (localhost) e solo se richiesto, il sito usa gli
+  // emulatori di Firebase invece del database vero. Sul sito pubblicato questo non succede mai.
+  let emulatori = false;
+  try {
+    emulatori = ['localhost', '127.0.0.1'].includes(location.hostname) && localStorage.getItem('quizNuotoEmulatori') === '1';
+  } catch (e) { /* niente */ }
+  if (emulatori) firebaseConfig.projectId = 'demo-quiz-nuoto';
+
   try {
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
 
     const auth = firebase.auth();
+    if (emulatori) {
+      auth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true });
+      firebase.firestore().useEmulator('127.0.0.1', 8080);
+    }
 
     // Accesso più rapido su telefono e Safari: di serie Firebase, prima di dire chi è collegato,
     // aspetta di aver caricato i servizi Google per l'accesso con Google (script esterno + iframe).

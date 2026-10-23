@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const errText = (e) => (window.QuizErrors ? window.QuizErrors.text(e) : (e?.message || String(e)));
 
   const OWNER_ADMIN_UID = 'uPsEYGwQwrXZEwt5KID6DnVt51p2';
   const WORKS = Array.isArray(window.ARTE_WORKS) ? window.ARTE_WORKS : [];
@@ -17,6 +18,8 @@
   let currentProfile = {};
   let isAdmin = false;
   let accessGranted = false;
+  // Il cloud si aggiorna solo dopo averlo letto: niente sovrascritture con la copia del dispositivo
+  let cloudLoaded = false;
   let state = null;
   let currentQuiz = null;
   let currentIndex = 0;
@@ -64,6 +67,8 @@
     if (!fb?.configured) return setGate('Firebase non configurato', 'Controlla firebase-config.js.');
     fb.auth.onAuthStateChanged(async (user) => {
       currentUser = user;
+      cloudLoaded = false;
+      clearTimeout(scheduleCloudSync._t);
       if (!user) { location.href='index.html'; return; }
       try {
         // Letture in parallelo: si entra prima nel corso
@@ -91,6 +96,10 @@
           if (courseSettingsSnap.blocked || courseSettingsSnap.hidden) { systemGate('blocked', 'course', 'Corso non disponibile', courseSettingsSnap.blockReason); return; }
         }
 
+        if (!isAdmin && access.banned) {
+          setGate('Account bloccato', `Questo account è stato bloccato.${access.banReason ? ` Motivo: ${access.banReason}` : ''}`);
+          return;
+        }
         accessGranted = isAdmin || access.courseAccess?.arte === true;
         if (!accessGranted) {
           setGate('Corso non autorizzato', 'Non hai l’autorizzazione per entrare nel corso Arte. Torna alla schermata corsi e richiedi accesso.');
@@ -106,7 +115,7 @@
         await loadAdminPendingBell();
         await loadCourseAnnouncements();
         await loadSudokuLeaderboards();
-      } catch(error){ setGate('Errore account', error.message); }
+      } catch(error){ setGate('Errore account', errText(error)); }
     });
   }
 
@@ -189,7 +198,7 @@
   }
   function saveState(){ localStorage.setItem(storageKey(), JSON.stringify(state)); scheduleCloudSync(); }
   function scheduleCloudSync(){
-    if(!currentUser || !accessGranted || isAdmin) return;
+    if(!currentUser || !accessGranted || isAdmin || !cloudLoaded) return;
     clearTimeout(scheduleCloudSync._t);
     scheduleCloudSync._t = setTimeout(async () => {
       try {
@@ -215,7 +224,14 @@
         state = mergeArteState(state || defaultState(), snap.data() || {});
         localStorage.setItem(storageKey(), JSON.stringify(state));
       }
-    } catch(error) { console.warn('Caricamento cloud Arte non riuscito', error); }
+      cloudLoaded = true;
+      scheduleCloudSync();
+    } catch(error) {
+      console.warn('Caricamento cloud Arte non riuscito', error);
+      // si riprova quando torna la rete; intanto si studia sul dispositivo
+      const user = currentUser;
+      window.addEventListener('online', () => { if (currentUser === user && !cloudLoaded) loadCloudState().then(() => renderHome?.()); }, { once: true });
+    }
   }
 
   function mergeArteState(local, cloud){

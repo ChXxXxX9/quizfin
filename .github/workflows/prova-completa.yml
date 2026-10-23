@@ -1,0 +1,44 @@
+name: Prova completa
+
+# Percorre tutto il sito con il vero SDK Firebase, gli emulatori (accesso + database con le regole vere)
+# e il service worker vero: richiesta account, approvazione admin, verifica email, corsi, quiz, streak,
+# classifica, account, annunci, notifiche dell'admin, manutenzione, rete assente.
+# Parte a mano (Actions → "Prova completa") o a ogni push su un ramo "prova/...".
+on:
+  workflow_dispatch:
+  push:
+    branches: ['prova/**']
+
+permissions:
+  contents: read
+
+env:
+  FIREBASE_TOOLS: firebase-tools@15.33.0
+
+jobs:
+  prova:
+    name: Prova il sito
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Installa il browser di prova
+        working-directory: prove-sito
+        run: |
+          npm install --no-audit --no-fund --ignore-scripts
+          npx playwright install --with-deps chromium
+
+      - name: Prova con gli emulatori
+        run: |
+          npx --yes "$FIREBASE_TOOLS" emulators:exec --only auth,firestore --project demo-quiz-nuoto \
+            "node prove-sito/prova.mjs"

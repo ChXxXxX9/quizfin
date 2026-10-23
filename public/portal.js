@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const errText = (e) => (window.QuizErrors ? window.QuizErrors.text(e) : (e?.message || String(e)));
   const OWNER_ADMIN_UID = 'uPsEYGwQwrXZEwt5KID6DnVt51p2';
   const els = {};
   let currentUser = null;
@@ -38,7 +39,7 @@
   function setupAuth(){
     const fb=window.FirebaseQuiz;
     if(!fb?.configured){ showLoginGate('Firebase non configurato','Configura firebase-config.js.','Errore'); return; }
-    fb.auth.getRedirectResult?.().catch((error)=>setMessage(error.message));
+    fb.auth.getRedirectResult?.().catch((error)=>setMessage(errText(error)));
     fb.auth.onAuthStateChanged(async (user)=>{
       currentUser=user; accountData=null; isAdmin=false; els.adminBtn?.classList.add('hidden');
       if (userUnsubscribe) { try { userUnsubscribe(); } catch {} userUnsubscribe = null; }
@@ -65,9 +66,9 @@
           if (!profileSaved) { profileSaved = true; ensureUserProfile(user, accountData).catch(() => {}); }
           await renderAccountState();
         }, (error) => {
-          showStatusGate('Errore account', escapeHtml(error.message), 'Errore');
+          showStatusGate('Errore account', escapeHtml(errText(error)), 'Errore');
         });
-      }catch(error){ showStatusGate('Errore account', escapeHtml(error.message), 'Errore'); }
+      }catch(error){ showStatusGate('Errore account', escapeHtml(errText(error)), 'Errore'); }
     });
   }
 
@@ -222,7 +223,7 @@
   async function sendVerificationEmailManual(){
     if (!currentUser) return;
     try { await currentUser.sendEmailVerification(verificationActionSettings()); showToast('Email di verifica inviata. Controlla anche spam/promozioni.'); }
-    catch (error) { showToast(error.message); }
+    catch (error) { showToast(errText(error)); }
   }
   async function enterVerifiedSite(){
     if (!currentUser) return;
@@ -243,7 +244,7 @@
       els.approvalActions?.classList.add('hidden');
       renderCourses();
       loadPortalAnnouncements();
-    } catch (error) { showToast(error.message); }
+    } catch (error) { showToast(errText(error)); }
   }
   async function requestAccountReview(){
     const access = getAccess();
@@ -251,7 +252,7 @@
     try{
       await callPublicFunction('create-account-request', { requestedCourses, reviewRequest:true, message:'Richiesta ricontrollo account dopo rigetto' }, true);
       showToast('Richiesta di ricontrollo inviata.');
-    }catch(error){ showToast(error.message); }
+    }catch(error){ showToast(errText(error)); }
   }
   async function ensureUserProfile(user, data){
     await db().collection('users').doc(user.uid).set({ profile:{ uid:user.uid, email:user.email||'', displayName:user.displayName||'', emailVerified:Boolean(user.emailVerified), lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(), createdAt: data?.profile?.createdAt || firebase.firestore.FieldValue.serverTimestamp() } }, {merge:true});
@@ -417,7 +418,7 @@
       if (reviewRequest) { accountData.access.courseReviewPending = accountData.access.courseReviewPending || {}; accountData.access.courseReviewPending[course] = true; }
       renderCourses();
       showToast(reviewRequest ? 'Richiesta di ricontrollo inviata allo staff.' : 'Richiesta accesso inviata allo staff.');
-    }catch(error){ showToast(error.message); }
+    }catch(error){ showToast(errText(error)); }
   }
   function openAccountRequestModal(preselect){
     els.accountRequestMessage.textContent='';
@@ -459,7 +460,7 @@
       showToast('Richiesta account inviata.');
       if(!currentUser){ try { await window.FirebaseQuiz.auth.signInWithEmailAndPassword(email,password); } catch {} }
       setTimeout(closeAccountRequestModal, 1200);
-    }catch(error){ els.accountRequestMessage.textContent = error.message; }
+    }catch(error){ els.accountRequestMessage.textContent = errText(error); }
     finally { els.submitAccountRequestBtn.disabled = false; }
   }
   async function loginWithGoogle(){
@@ -468,12 +469,12 @@
     catch(error){
       const fallbackCodes=['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'];
       if(fallbackCodes.includes(error.code)) return window.FirebaseQuiz.auth.signInWithRedirect(window.FirebaseQuiz.googleProvider);
-      setMessage(error.message);
+      setMessage(errText(error));
     }
   }
 
-  async function login(){ const email=els.emailInput.value.trim(); const pass=els.passwordInput.value; if(!email||!pass) return setMessage('Inserisci email e password.'); try{ await window.FirebaseQuiz.auth.signInWithEmailAndPassword(email,pass); }catch(error){ setMessage(error.message); } }
-  async function forgotPassword(){ const email=els.emailInput.value.trim(); if(!email) return setMessage('Inserisci la tua email.'); try{ await window.FirebaseQuiz.auth.sendPasswordResetEmail(email); setMessage('Email di reimpostazione inviata.'); }catch(error){ setMessage(error.message); } }
+  async function login(){ const email=els.emailInput.value.trim(); const pass=els.passwordInput.value; if(!email||!pass) return setMessage('Inserisci email e password.'); try{ await window.FirebaseQuiz.auth.signInWithEmailAndPassword(email,pass); }catch(error){ setMessage(errText(error)); } }
+  async function forgotPassword(){ const email=els.emailInput.value.trim(); if(!email) return setMessage('Inserisci la tua email.'); try{ await window.FirebaseQuiz.auth.sendPasswordResetEmail(email); setMessage('Email di reimpostazione inviata.'); }catch(error){ setMessage(errText(error)); } }
   async function logout(){ await window.FirebaseQuiz.auth.signOut(); }
   function setupTheme(){ const saved=localStorage.getItem('quizNuotoTheme')||'light'; document.body.classList.toggle('dark', saved==='dark'); els.themeToggle.textContent=saved==='dark'?'☾':'☀︎'; }
   function toggleTheme(){ const dark=document.body.classList.toggle('dark'); localStorage.setItem('quizNuotoTheme', dark?'dark':'light'); els.themeToggle.textContent=dark?'☾':'☀︎'; }
