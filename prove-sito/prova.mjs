@@ -197,7 +197,7 @@ async function main() {
     if (await U.page.locator('#completeRequestBtn').isVisible().catch(() => false)) await U.page.click('#completeRequestBtn');
     ok(await aspetta(U.page, () => !document.getElementById('mainContent').classList.contains('hidden'), 20000), 'utente: vede i suoi corsi');
     await chiudiPopup(U.page);
-    ok(visti.join(' → ') === 'promozione → annuncio → notifiche' || visti.join(' → ') === 'promozione → notifiche → annuncio', `utente nuovo: popup uno alla volta (${visti.join(' → ') || 'nessuno'})`);
+    ok(visti[0] === 'promozione' && visti.includes('annuncio'), `utente nuovo: popup uno alla volta (${visti.join(' → ') || 'nessuno'}; quello delle notifiche compare solo dove il browser le supporta)`);
     await sleep(800);
     const prof = (await fsGet(`users/${nuovoUid}`))?.profile || {};
     ok(Boolean(prof.promoSeen?.nuotifica_v1) && Boolean(prof.promoSeen?.notifiche_v1), 'popup: "già visti" salvati nel profilo');
@@ -247,6 +247,10 @@ async function main() {
     const voce = await fsGet(`courseLeaderboards/istruttore/entries/${nuovoUid}`);
     ok(Number(voce?.streak) === 1, 'classifica: voce dell\'utente salvata');
     await U.page.evaluate(() => document.querySelectorAll('.study-milestone-overlay').forEach((o) => o.remove()));
+    for (let i = 0; i < 3; i++) { await U.page.keyboard.press('Escape'); await sleep(200); }
+    const coperto = await U.page.evaluate(() => [...document.querySelectorAll('.modal, .site-dialog-backdrop')].filter((m) => !m.classList.contains('hidden') && m.getClientRects().length).map((m) => m.id || m.className).join(', '));
+    if (coperto) esiti.push(`-- finestre aperte dopo il quiz: ${coperto}`);
+    await U.page.evaluate(() => document.querySelectorAll('.modal:not(.hidden)').forEach((m) => { if (!m.id) m.remove(); else m.classList.add('hidden'); }));
     await U.page.click('.tabbar [data-nav-view="statsView"]');
     ok(await aspetta(U.page, () => document.querySelector('#statsView.active') && document.querySelectorAll('#allQuestionsProgressList .question-check').length > 30, 10000), 'statistiche: si aprono con l\'elenco delle domande');
     await U.page.click('#homeBtn');
@@ -313,6 +317,8 @@ async function main() {
     });
     for (const c of ['istruttore', 'bagnino']) await fsSet(`users/${vUid}/studyGoals/${c}`, { courseId: c, dailyTarget: 15, goalMode: 'daily', streak: 2, bestStreak: 4, lastMetDate: '2026-01-01', dailyCounts: {} });
     const V = await nuovaPagina('vecchio');
+    const logV = [];
+    V.page.on('console', (m) => logV.push(`${m.type()}: ${m.text().slice(0, 160)}`));
     await V.page.goto(`${SITE}/index.html`, { waitUntil: 'load' });
     await aspetta(V.page, () => document.getElementById('loginBtn')?.offsetParent, 15000);
     await V.page.fill('#emailInput', 'vecchio@prova.it');
@@ -322,7 +328,15 @@ async function main() {
     await chiudiPopup(V.page, { quiete: 2500 });
     await V.page.click('#openIstruttoreBtn');
     await V.page.waitForURL('**/istruttore.html', { timeout: 15000 });
-    ok(await aspetta(V.page, () => /50\s*\/\s*1000/.test(document.getElementById('mixedMiniText')?.textContent || ''), 20000), `utente esistente: i progressi arrivano dal cloud ("${await testo(V.page, '#mixedMiniText')}")`);
+    const caricati = await aspetta(V.page, () => /50\s*\/\s*1000/.test(document.getElementById('mixedMiniText')?.textContent || ''), 20000);
+    ok(caricati, `utente esistente: i progressi arrivano dal cloud ("${await testo(V.page, '#mixedMiniText')}")`);
+    if (!caricati) {
+      const diag = await V.page.evaluate(() => ({ body: document.body.className, titolo: document.getElementById('authTitle')?.textContent, msg: document.getElementById('authMessage')?.textContent, vista: document.querySelector('.view.active')?.id, locale: (() => { try { return Object.keys(localStorage).join('|'); } catch { return '-'; } })() }));
+      esiti.push(`-- diagnosi: ${JSON.stringify(diag).slice(0, 400)}`);
+      esiti.push(`-- console: ${logV.slice(-12).join(' ¦ ').slice(0, 800)}`);
+      const doc = await fsGet(`users/${vUid}`);
+      esiti.push(`-- nel database: misto=${(doc?.progress?.mixedCompleted || []).length} quiz=${doc?.stats?.quizCount} chiavi=${Object.keys(doc || {}).join(',')}`);
+    }
     ok(await aspetta(V.page, () => document.querySelector('.study-goal-widget [data-study-streak]')?.textContent === '0', 10000), 'streak: dopo mesi senza obiettivo è scesa a 0 (−1 al giorno)');
     await V.page.goto(`${SITE}/bagnino.html`, { waitUntil: 'load' });
     ok(await aspetta(V.page, () => document.querySelector('#homeView.active') && !document.body.classList.contains('app-locked'), 20000), 'Bagnino: entra nella home del corso');
