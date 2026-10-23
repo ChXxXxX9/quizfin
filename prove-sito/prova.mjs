@@ -16,6 +16,7 @@ const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).form
 let nuovoUid = null;
 const esiti = [];
 const problemi = [];
+const registroDb = [];
 const erroriPagina = new Map(); // testo → conteggio
 const ok = (cond, msg) => { esiti.push(`${cond ? 'OK' : 'NO'} ${msg}`); if (!cond) problemi.push(msg); return cond; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -52,6 +53,50 @@ async function fsList(collectionPath) {
   return (d.documents || []).map((doc) => ({ id: doc.name.split('/').pop(), dati: decodificaCampi(doc.fields || {}) }));
 }
 async function fsDelete(path) { await fetch(`${FS}/${path}`, { method: 'DELETE', headers: OWNER }); }
+
+
+// Registro delle letture/scritture del database fatte dalla pagina (per capire chi scrive cosa)
+function registroDatabase() {
+  window.__fsLog = [];
+  const breve = (ref) => String(ref?.path || '').split('/').map((x, i) => (i === 1 ? 'U' : x)).join('/');
+  const chi = () => (new Error().stack || '').split('\n').slice(3, 7).map((r) => r.trim().replace(/^at /, '').replace(/\(?https?:\/\/[^/]+\//g, '').replace(/\)$/, '')).join(' < ');
+  const misto = (d) => d?.progress?.mixedCompleted?.length;
+  const aggancia = () => {
+    const P = window.firebase?.firestore?.DocumentReference?.prototype;
+    if (!P || P.__agganciato) return Boolean(P);
+    P.__agganciato = true;
+    const set0 = P.set; const get0 = P.get;
+    P.set = function (dati, opz) {
+      window.__fsLog.push(`${Math.round(performance.now())} SET ${breve(this)} merge=${Boolean(opz?.merge)} chiavi=${Object.keys(dati || {}).slice(0, 8).join(',')} misto=${misto(dati)} ← ${chi()}`);
+      return set0.call(this, dati, opz);
+    };
+    P.get = function (opz) {
+      const n = Math.round(performance.now());
+      const pr = get0.call(this, opz);
+      const r = breve(this);
+      const c = chi();
+      pr.then((s) => window.__fsLog.push(`${n} GET ${r} esiste=${s.exists} cache=${s.metadata?.fromCache} inSospeso=${s.metadata?.hasPendingWrites} misto=${misto(s.data?.())} chiavi=${Object.keys(s.data?.() || {}).slice(0, 6).join(',')} ← ${c}`),
+        (e) => window.__fsLog.push(`${n} GET ${r} ERRORE ${e?.code || e} ← ${c}`));
+      return pr;
+    };
+    const A = window.firebase?.auth?.Auth?.prototype;
+    if (A && !A.__agganciato) {
+      A.__agganciato = true;
+      const on0 = A.onAuthStateChanged;
+      A.onAuthStateChanged = function (fn, ...resto) {
+        const avvolta = typeof fn === 'function' ? (u) => { window.__fsLog.push(`${Math.round(performance.now())} AUTH ${u ? 'utente' : 'nessuno'} ← ${chi()}`); return fn(u); } : fn;
+        return on0.call(this, avvolta, ...resto);
+      };
+    }
+    return true;
+  };
+  if (!aggancia()) {
+    const t = setInterval(() => { if (aggancia()) clearInterval(t); }, 0);
+    document.addEventListener('readystatechange', aggancia);
+  }
+  // prima che app.js parta: aggancio appena compare lo script dell'SDK del database
+  new MutationObserver(() => aggancia()).observe(document, { childList: true, subtree: true });
+}
 
 /* ---------------- Browser ---------------- */
 let browser;
@@ -317,6 +362,7 @@ async function main() {
     });
     for (const c of ['istruttore', 'bagnino']) await fsSet(`users/${vUid}/studyGoals/${c}`, { courseId: c, dailyTarget: 15, goalMode: 'daily', streak: 2, bestStreak: 4, lastMetDate: '2026-01-01', dailyCounts: {} });
     const V = await nuovaPagina('vecchio');
+    await V.context.addInitScript(registroDatabase);
     const logV = [];
     V.page.on('console', (m) => logV.push(`${m.type()}: ${m.text().slice(0, 160)}`));
     await V.page.goto(`${SITE}/index.html`, { waitUntil: 'load' });
@@ -336,6 +382,8 @@ async function main() {
       esiti.push(`-- console: ${logV.slice(-12).join(' ¦ ').slice(0, 800)}`);
       const doc = await fsGet(`users/${vUid}`);
       esiti.push(`-- nel database: misto=${(doc?.progress?.mixedCompleted || []).length} quiz=${doc?.stats?.quizCount} chiavi=${Object.keys(doc || {}).join(',')}`);
+      const reg = await V.page.evaluate(() => window.__fsLog || []).catch(() => []);
+      registroDb.push(...reg.filter((r) => / AUTH |users\/U( |\/courseData)/.test(r)).slice(0, 30).map((r) => r.slice(0, 330)));
     }
     ok(await aspetta(V.page, () => document.querySelector('.study-goal-widget [data-study-streak]')?.textContent === '0', 10000), 'streak: dopo mesi senza obiettivo è scesa a 0 (−1 al giorno)');
     await V.page.goto(`${SITE}/bagnino.html`, { waitUntil: 'load' });
@@ -385,6 +433,12 @@ async function main() {
     for (const e of errori) { if ((c + e).length > 900) { out.push(c); c = ''; } c += `${e}%0A`; }
     if (c) out.push(c);
     out.slice(0, 4).forEach((b, i) => console.log(`::warning title=Errori nella pagina ${i + 1}/${Math.min(out.length, 4)}::${b}`));
+  }
+  if (registroDb.length) {
+    let c = ''; const out = [];
+    for (const r of registroDb) { if ((c + r).length > 950) { out.push(c); c = ''; } c += `${r.replace(/%/g, '%25')}%0A`; }
+    if (c) out.push(c);
+    out.slice(0, 8).forEach((b, i) => console.log(`::error title=Registro database ${i + 1}/${Math.min(out.length, 8)}::${b}`));
   }
   console.log(`::notice title=Esito::${esiti.length - fallite.length}/${esiti.length} controlli OK · ${errori.length} errori diversi nelle pagine`);
 }
