@@ -73,6 +73,29 @@ async function main() {
       if (new Set(el.map(Number)).size !== el.length) doppioni++;
     }
   }
+  // Dettagli senza dati personali: forma dell'accesso degli utenti "incoerenti" e attività salvata
+  const forme = [];
+  let conAttivita = 0; let quizMax = 0; let misteMax = 0; let approvatiSenzaStato = 0; let ultimiAccessi = [];
+  for (const [, d] of perUid) {
+    const a = d.access || {};
+    const ca = a.courseAccess || {};
+    const corsiOk = Object.entries(ca).filter(([, v]) => v === true).map(([k]) => k);
+    if (!a.appVerified && !a.banned && corsiOk.length) {
+      forme.push(`stato=${a.accountStatus || '-'} corsi=${corsiOk.join('+')} rifiuti=${a.rejectedCount ?? '-'} inAttesa=${(a.pendingCourses || []).join('+') || '-'} revisione=${a.reviewPending ? 'sì' : 'no'} sbloccato=${a.accountStatus === 'unblocked' ? 'sì' : 'no'} approvatoIl=${a.approvedAt ? 'sì' : 'no'} verificatoDaAdmin=${a.verifiedBy ? 'sì' : 'no'}`);
+    }
+    const quiz = Number(d.stats?.quizCount || 0);
+    const misto = Array.isArray(d.progress?.mixedCompleted) ? d.progress.mixedCompleted.length : 0;
+    if (quiz > 0 || misto > 0) conAttivita++;
+    quizMax = Math.max(quizMax, quiz);
+    misteMax = Math.max(misteMax, misto);
+    if (a.appVerified && (ca.istruttore === true || !Object.keys(ca).length) && !d.stats) approvatiSenzaStato++;
+    const ultimo = Date.parse(d.profile?.lastLoginAt || '');
+    if (Number.isFinite(ultimo)) ultimiAccessi.push(Math.floor((Date.now() - ultimo) / 864e5));
+  }
+  ultimiAccessi.sort((x, y) => x - y);
+  righe.push(`Istruttore: utenti con attività salvata ${conAttivita} · quiz massimo per utente ${quizMax} · domande del misto fatte (max) ${misteMax} · approvati Istruttore senza nessun dato salvato ${approvatiSenzaStato}`);
+  righe.push(`Ultimo accesso registrato (giorni fa, per utente): ${ultimiAccessi.join(', ') || '—'}`);
+  forme.forEach((f, i) => righe.push(`Incoerente ${i + 1}: ${f}`));
   conta('Approvati', approvati);
   conta('In attesa / revisione', inAttesa);
   conta('Rifiutati', rifiutati);
@@ -115,6 +138,12 @@ async function main() {
     const nonVerificati = auth.filter((u) => !u.emailVerified).length;
     const recenti = auth.filter((u) => Number(u.lastLoginAt || 0) > Date.now() - 7 * 864e5).length;
     righe.push(`Account di accesso: ${auth.length} · con password ${conPassword} · solo Google ${soloGoogle} · email non verificata ${nonVerificati} · disattivati ${disattivati} · entrati negli ultimi 7 giorni ${recenti}`);
+    const verifica = [...perUid.entries()].filter(([, d]) => d.access?.appVerified && d.access?.requiresEmailVerification === true && d.access?.verificationRequiredVersion === 'v24');
+    verifica.forEach(([uid, d], i) => {
+      const u = auth.find((x) => x.localId === uid);
+      const giorni = u?.lastLoginAt ? Math.floor((Date.now() - Number(u.lastLoginAt)) / 864e5) : '-';
+      righe.push(`Verifica email ${i + 1}: email verificata per l'accesso=${u?.emailVerified ? 'sì' : 'no'} · nel profilo=${d.profile?.emailVerified ? 'sì' : 'no'} · accesso con ${(u?.providerUserInfo || []).map((p) => p.providerId).join('+') || '-'} · ultimo ingresso ${giorni} giorni fa`);
+    });
     conta('Account di accesso senza documento utente', senzaDoc, { avviso: true, soglia: 2 });
     conta('Documenti utente senza account di accesso (cancellati)', docSenzaAccount, { avviso: true, soglia: 2 });
   } catch (e) {
