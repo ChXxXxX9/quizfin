@@ -200,6 +200,22 @@ async function main() {
     if (g && streakReale(g, oggi) !== streakReale(v.dati || {}, oggi)) streakDiversa++;
   }
   righe.push(`Voci di classifica: ${voci.length}`);
+
+  // Progressi Istruttore probabilmente azzerati: la classifica conta per sempre le risposte giuste del
+  // quiz misto; se il documento dell'utente ne ha meno, i suoi progressi sono stati sovrascritti.
+  let azzerati = 0; let giusteSparite = 0; let istruttoreAttivi = 0;
+  for (const v of voci) {
+    if (v.percorso[1] !== 'istruttore') continue;
+    const d = perUid.get(v.percorso[3]);
+    if (!d) continue;
+    const totale = Number(v.dati?.totalCorrect || 0);
+    if (totale > 0) istruttoreAttivi++;
+    const nelDoc = Number(d.stats?.correct || 0);
+    if (totale > nelDoc + 5) { azzerati++; giusteSparite += totale - nelDoc; }
+  }
+  righe.push(`Istruttore: utenti con risposte giuste in classifica: ${istruttoreAttivi}`);
+  conta('Istruttore: utenti con progressi più bassi della classifica (probabilmente azzerati)', azzerati, { avviso: true });
+  if (azzerati) righe.push(`Istruttore: risposte giuste in classifica che mancano nei progressi: ${giusteSparite}`);
   conta('Voci di classifica di utenti che non esistono più', orfane, { avviso: true });
   conta('Voci di classifica senza nome', senzaNomeCl, { avviso: true });
   conta('Voci di classifica con streak diversa dall\'obiettivo', streakDiversa, { avviso: true });
