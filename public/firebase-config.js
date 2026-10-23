@@ -40,12 +40,24 @@
     return;
   }
 
+  // Prove automatiche: solo sul computer di prova (localhost) e solo se richiesto, il sito usa gli
+  // emulatori di Firebase invece del database vero. Sul sito pubblicato questo non succede mai.
+  let emulatori = false;
+  try {
+    emulatori = ['localhost', '127.0.0.1'].includes(location.hostname) && localStorage.getItem('quizNuotoEmulatori') === '1';
+  } catch (e) { /* niente */ }
+  if (emulatori) firebaseConfig.projectId = 'demo-quiz-nuoto';
+
   try {
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
 
     const auth = firebase.auth();
+    if (emulatori) {
+      auth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true });
+      firebase.firestore().useEmulator('127.0.0.1', 8080);
+    }
 
     // Accesso più rapido su telefono e Safari: di serie Firebase, prima di dire chi è collegato,
     // aspetta di aver caricato i servizi Google per l'accesso con Google (script esterno + iframe).

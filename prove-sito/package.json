@@ -1,0 +1,8 @@
+{
+  "name": "prove-sito-quiz-nuoto",
+  "private": true,
+  "type": "module",
+  "description": "Prova completa del sito con il vero SDK Firebase, gli emulatori e il service worker",
+  "scripts": { "prova": "node prova.mjs" },
+  "devDependencies": { "playwright": "1.48.2" }
+}
