@@ -2282,7 +2282,7 @@ ${html}`));
     if (viewId === 'statsView') renderStats();
     if (viewId === 'fadView') renderFad();
     // in cima subito: lo scorrimento animato faceva sembrare lento ogni cambio di schermata
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    window.scrollTo(0, 0);
   }
 
   function setBar(el, value) {

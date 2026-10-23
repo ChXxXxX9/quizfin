@@ -1,0 +1,26 @@
+name: Controllo dati
+
+# Si avvia a mano (Actions → "Controllo dati" → Run workflow). Legge il database e gli account di
+# accesso e scrive come annotazioni solo conteggi e impostazioni generali: niente nomi, email o
+# identificativi, perché il repository è pubblico. Non modifica niente.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controlla:
+    name: Controlla i dati
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Controllo
+        working-directory: notifiche
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node src/controllo.js
