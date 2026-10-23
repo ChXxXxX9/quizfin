@@ -53,6 +53,26 @@ service cloud.firestore {
         && courseMapOk(after, 'courseReviewPending')
         && courseMapOk(after, 'courseCanRequestReview');
     }
+    // Progressi di studio (Istruttore, nel documento dell'utente): quanto fatto non può crollare.
+    // Una scrittura che dimezza le domande fatte o i quiz svolti viene rifiutata, a meno che sia un
+    // azzeramento voluto (progressResetAt = ora della richiesta). Protegge i progressi anche dalle
+    // versioni vecchie del sito ancora in cache sui telefoni.
+    function idsDone(data, field) {
+      let p = data.get('progress', {});
+      let v = p is map ? p.get(field, []) : [];
+      return v is list ? v.size() : 0;
+    }
+    function quizzesDone(data) {
+      let s = data.get('stats', {});
+      let q = s is map ? s.get('quizCount', 0) : 0;
+      return q is number ? q : 0;
+    }
+    function progressKept(before, after) {
+      return after.get('progressResetAt', null) == request.time
+        || (idsDone(after, 'mixedCompleted') * 2 >= idsDone(before, 'mixedCompleted')
+            && idsDone(after, 'allAnswered') * 2 >= idsDone(before, 'allAnswered')
+            && quizzesDone(after) * 2 >= quizzesDone(before));
+    }
     // Stato account dell'utente che fa la richiesta (documento può non esistere ancora)
     function myAccess() {
       return exists(/databases/$(database)/documents/users/$(request.auth.uid))
@@ -80,7 +100,8 @@ service cloud.firestore {
       allow read: if (signedIn() && request.auth.uid == userId) || isAdmin();
       allow update: if isAdmin()
         || (signedIn() && request.auth.uid == userId
-            && validSelfAccess(accessOf(resource.data), accessOf(request.resource.data)));
+            && validSelfAccess(accessOf(resource.data), accessOf(request.resource.data))
+            && progressKept(resource.data, request.resource.data));
       allow delete: if isAdmin();
 
       match /courseData/{courseId} {

@@ -317,3 +317,39 @@ test('notifiche: l\'utente salva i suoi dispositivi, la coda di invio è solo de
   await assertSucceeds(ref.delete());
   await assertSucceeds(adminDb.doc('courseSettings/notifiche').set({ streakReminders: true, hours: [18, 21] }, { merge: true }));
 });
+
+test('progressi Istruttore: non si possono azzerare per sbaglio, solo con un azzeramento voluto', async () => {
+  const ids = (n, da = 1) => Array.from({ length: n }, (_, i) => i + da);
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc('users/studente').set({
+      access: { appVerified: true, accountStatus: 'approved', courseAccess: { istruttore: true } },
+      stats: { quizCount: 6, totalAnswered: 120 },
+      progress: { mixedCompleted: ids(100), allAnswered: ids(120), mixedCycleSeen: ids(100) }
+    });
+  });
+  const db = session('studente', { emailVerified: true });
+  const ref = db.doc('users/studente');
+  // Profilo, notifiche e progressi che crescono: sempre consentiti
+  await assertSucceeds(ref.set({ profile: { firstName: 'Mario' } }, { merge: true }));
+  await assertSucceeds(ref.set({ stats: { quizCount: 7, totalAnswered: 140 }, progress: { mixedCompleted: ids(110), allAnswered: ids(130), mixedCycleSeen: [] } }, { merge: true }));
+  // Piccoli cali (domanda tolta dai progressi, banca domande aggiornata): consentiti
+  await assertSucceeds(ref.set({ progress: { mixedCompleted: ids(105), allAnswered: ids(128) } }, { merge: true }));
+  // Lo stato vuoto di una pagina appena aperta (il problema trovato): rifiutato
+  await assertFails(ref.set({ stats: { quizCount: 0, totalAnswered: 0 }, progress: { mixedCompleted: [], allAnswered: [], mixedCycleSeen: [] } }, { merge: true }));
+  await assertFails(ref.set({ stats: { quizCount: 1, totalAnswered: 20 }, progress: { mixedCompleted: ids(20), allAnswered: ids(20) } }, { merge: true }));
+  let dati = await read('users/studente');
+  assert.equal(dati.progress.mixedCompleted.length, 105);
+  assert.equal(dati.stats.quizCount, 7);
+  // Azzeramento voluto dal pulsante "Azzera": consentito con progressResetAt = ora del server
+  await assertSucceeds(ref.set({ progressResetAt: FV.serverTimestamp(), stats: { quizCount: 0, totalAnswered: 0 }, progress: { mixedCompleted: [], allAnswered: [], mixedCycleSeen: [] } }, { merge: true }));
+  dati = await read('users/studente');
+  assert.equal(dati.progress.mixedCompleted.length, 0);
+  // Una data di azzeramento vecchia non vale come permesso
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc('users/studente').set({ stats: { quizCount: 4 }, progress: { mixedCompleted: ids(40), allAnswered: ids(40) } }, { merge: true });
+  });
+  await assertFails(ref.set({ progress: { mixedCompleted: [], allAnswered: [] } }, { merge: true }));
+  // L'admin può sempre
+  const adminDb = session('admin1', { email: 'admin1@esempio.it', emailVerified: true });
+  await assertSucceeds(adminDb.doc('users/studente').set({ progress: { mixedCompleted: [], allAnswered: [] }, stats: { quizCount: 0 } }, { merge: true }));
+});

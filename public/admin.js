@@ -516,7 +516,14 @@
     }
     els.usersList.innerHTML = filtered.map((u) => {
       const email = u.profile?.email || 'Email non salvata';
-      const status = u.access?.banned ? 'Bloccato' : (u.access?.appVerified || u.profile?.emailVerified ? 'OK' : 'Da verificare');
+      const a = u.access || {};
+      const hasCourses = Object.values(a.courseAccess || {}).some((v) => v === true);
+      const status = a.banned ? 'Bloccato'
+        : (!a.appVerified && hasCourses) ? '⚠ Da sistemare'
+        : (a.appVerified && a.requiresEmailVerification === true && !u.profile?.emailVerified) ? 'Verifica email'
+        : a.appVerified ? 'OK'
+        : a.accountStatus === 'rejected' ? 'Rifiutato'
+        : 'In attesa';
       return `
         <button class="admin-user-row ${u.uid === selectedUid ? 'selected' : ''}" type="button" data-uid="${escapeHtml(u.uid)}">
           <span><strong>${escapeHtml(email)}</strong><small>${escapeHtml(u.uid)}</small></span>
@@ -575,6 +582,14 @@
         ${canManageAdmins ? `<button id="makeAdminBtn" class="warning-btn small-btn" type="button">${adminInfo?.active ? 'Aggiorna admin' : 'Nomina admin'}</button>` : ''}
         ${canManageAdmins && adminInfo?.active && u.uid !== OWNER_ADMIN_UID ? `<button id="removeAdminBtn" class="danger-btn small-btn" type="button">Rimuovi admin</button>` : ''}
       </div>
+      ${(() => {
+        const a = u.access || {};
+        const corsi = Object.entries(a.courseAccess || {}).filter(([, v]) => v === true).map(([k]) => k);
+        const notes = [];
+        if (!a.banned && !a.appVerified && corsi.length) notes.push(`<p><strong>Stato incoerente:</strong> ha corsi abilitati (${escapeHtml(corsi.join(', '))}) ma l'account non risulta approvato, quindi non riesce a entrare in nessun corso. Premi <strong>Approva account</strong> per farlo entrare, oppure togli i corsi e salva.</p>`);
+        if (a.appVerified && a.requiresEmailVerification === true && !u.profile?.emailVerified) notes.push(`<p><strong>Fermo alla verifica email:</strong> per entrare deve aprire il link che riceve per email. Se non gli arriva (guardate anche nello spam) puoi togliere questo passaggio.</p><button id="skipEmailVerificationBtn" class="secondary-btn small-btn" type="button">Togli l'obbligo di verifica email</button>`);
+        return notes.length ? `<div class="admin-warning-box">${notes.join('')}</div>` : '';
+      })()}
       <p class="message">Email verificata Firebase: <strong>${u.profile?.emailVerified ? 'sì' : 'no'}</strong> · Approvato admin: <strong>${u.access?.appVerified ? 'sì' : 'no'}</strong>${adminInfo?.active ? ` · Ruolo admin: <strong>${escapeHtml(adminInfo.role || 'admin')}</strong>` : ''}${u.access?.banReason ? ` · Motivo blocco: <strong>${escapeHtml(u.access.banReason)}</strong>` : ''}</p>
       <div class="course-approval-box user-course-box">
         <label class="checkline"><input id="userCourseIstruttore" type="checkbox" ${u.access?.courseAccess?.istruttore === true || (u.access?.appVerified && Object.keys(u.access?.courseAccess || {}).length === 0) ? 'checked' : ''} /> Accesso Istruttore di Nuoto</label>
@@ -611,6 +626,14 @@
     document.getElementById('unbanUserBtn').addEventListener('click', () => unbanUser(uid));
     document.getElementById('makeAdminBtn')?.addEventListener('click', () => makeAdmin(uid));
     document.getElementById('removeAdminBtn')?.addEventListener('click', () => removeAdmin(uid));
+    document.getElementById('skipEmailVerificationBtn')?.addEventListener('click', async () => {
+      try {
+        await db().collection('users').doc(uid).set({ access: { requiresEmailVerification: false, emailVerificationSkippedBy: currentUser.uid, emailVerificationSkippedAt: firebase.firestore.FieldValue.serverTimestamp() } }, { merge: true });
+        showToast('Verifica email tolta: ora può entrare.');
+        await loadUsers();
+        renderUserDetail(uid);
+      } catch (error) { showToast(`Non riuscito: ${error.message}`); }
+    });
   }
 
 
@@ -759,11 +782,22 @@
   }
 
   async function approveUser(uid, value) {
+    const del = firebase.firestore.FieldValue.delete();
+    // Stato sempre coerente: approvato = può entrare nei corsi abilitati; tolta l'approvazione = in attesa
     await db().collection('users').doc(uid).set({
-      access: {
-        appVerified: Boolean(value),
-        verifiedBy: value ? currentUser.uid : firebase.firestore.FieldValue.delete(),
-        verifiedAt: value ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.delete()
+      access: value ? {
+        appVerified: true,
+        banned: false,
+        accountStatus: 'approved',
+        reviewPending: false,
+        canRequestReview: del,
+        verifiedBy: currentUser.uid,
+        verifiedAt: firebase.firestore.FieldValue.serverTimestamp()
+      } : {
+        appVerified: false,
+        accountStatus: 'pending',
+        verifiedBy: del,
+        verifiedAt: del
       }
     }, { merge: true });
     showToast(value ? 'Utente approvato.' : 'Approvazione rimossa.');
@@ -786,10 +820,14 @@
   }
 
   async function unbanUser(uid) {
+    // Chi aveva già dei corsi abilitati torna a entrarci subito; gli altri devono fare una richiesta
+    const u = users.find((item) => item.uid === uid);
+    const hasCourses = Object.values(u?.access?.courseAccess || {}).some((v) => v === true);
     await db().collection('users').doc(uid).set({
       access: {
         banned: false,
-        accountStatus: 'unblocked',
+        appVerified: hasCourses,
+        accountStatus: hasCourses ? 'approved' : 'unblocked',
         rejectedCount: 0,
         canRequestReview: false,
         banReason: firebase.firestore.FieldValue.delete(),

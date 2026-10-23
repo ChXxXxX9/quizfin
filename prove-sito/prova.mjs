@@ -386,6 +386,29 @@ async function main() {
       registroDb.push(...reg.filter((r) => / AUTH |users\/U( |\/courseData)/.test(r)).slice(0, 30).map((r) => r.slice(0, 330)));
     }
     ok(await aspetta(V.page, () => document.querySelector('.study-goal-widget [data-study-streak]')?.textContent === '0', 10000), 'streak: dopo mesi senza obiettivo è scesa a 0 (−1 al giorno)');
+    // I progressi nel database restano quelli di prima (prima della correzione venivano azzerati a ogni apertura)
+    await sleep(2500);
+    let docV = await fsGet(`users/${vUid}`);
+    ok((docV?.progress?.mixedCompleted || []).length === 50 && docV?.stats?.quizCount === 3, `utente esistente: nel database i progressi restano (misto=${(docV?.progress?.mixedCompleted || []).length}, quiz=${docV?.stats?.quizCount})`);
+    await V.page.reload({ waitUntil: 'load' });
+    const ancora = await aspetta(V.page, () => /50\s*\/\s*1000/.test(document.getElementById('mixedMiniText')?.textContent || '') && !document.body.classList.contains('app-locked'), 20000);
+    await sleep(2000);
+    docV = await fsGet(`users/${vUid}`);
+    ok(ancora && (docV?.progress?.mixedCompleted || []).length === 50, `riapertura del corso: progressi ancora lì ("${await testo(V.page, '#mixedMiniText')}", database ${(docV?.progress?.mixedCompleted || []).length})`);
+    // Recupero: un dispositivo con un salvataggio di una versione precedente (60 domande) li riporta nel cloud
+    await V.page.evaluate(() => {
+      const k = 'quizNuotoState.v2';
+      const st = JSON.parse(localStorage.getItem(k) || '{}');
+      const ids = Array.from({ length: 60 }, (_, i) => i + 1);
+      st.progress = { ...(st.progress || {}), mixedCompleted: ids, mixedCycleSeen: ids, allAnswered: ids };
+      localStorage.setItem(k, JSON.stringify(st));
+      localStorage.removeItem(`${k}.meta`);
+    });
+    await V.page.reload({ waitUntil: 'load' });
+    const recuperati = await aspetta(V.page, () => /60\s*\/\s*1000/.test(document.getElementById('mixedMiniText')?.textContent || ''), 20000);
+    await sleep(2000);
+    docV = await fsGet(`users/${vUid}`);
+    ok(recuperati && (docV?.progress?.mixedCompleted || []).length === 60, `recupero dal dispositivo: progressi uniti ("${await testo(V.page, '#mixedMiniText')}", database ${(docV?.progress?.mixedCompleted || []).length})`);
     await V.page.goto(`${SITE}/bagnino.html`, { waitUntil: 'load' });
     ok(await aspetta(V.page, () => document.querySelector('#homeView.active') && !document.body.classList.contains('app-locked'), 20000), 'Bagnino: entra nella home del corso');
     await chiudiPopup(V.page, { quiete: 2000 });
