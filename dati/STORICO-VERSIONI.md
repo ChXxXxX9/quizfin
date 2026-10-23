@@ -176,3 +176,9 @@ Nota deploy:
 - Il sito è su **https://quiznuoto.web.app** (Firebase Hosting, piano gratuito), pubblicato da GitHub (repository `quizfin`).
 - Niente più funzioni Netlify: le operazioni account sono in `account-actions.js` e girano nel browser; le regole Firestore (`firestore.rules`) impediscono agli utenti di darsi permessi da soli.
 - Le regole ora permettono anche il salvataggio dei progressi del corso Istruttore nel documento utente.
+
+## v54 - Domande Istruttore confrontate con i PDF originali (23/10/2026)
+
+- Confronto completo delle 1000 domande con `2024_11_16_1000_Domande.pdf` e `2024_11_16_Correttore.pdf` (comprese le correzioni a mano del 16/11/2024): resoconto in `controllo_pdf_2026-10-23.json`.
+- Lettere giuste: tutte uguali al correttore (le 22 correzioni erano già applicate). Domanda 964: nel correttore la risposta è cancellata; nel sito resta C ("La percezione dell'impedimento…"), come nel correttore prima della cancellatura.
+- Corretti: 271 e 277 (118 → 112 come nel PDF), 275 e 285 (testo estraneo "112" in coda alla risposta D), spazi dopo i trattini e spazi doppi in 38 risposte. Spiegazioni 271, 275, 341 allineate (112).
