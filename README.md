@@ -94,11 +94,11 @@ al massimo dalla pagina successiva, senza doverlo cambiare a mano.
 
 ## Prove in locale (facoltativo)
 
-Servono Node 20+ e Java 21:
+Servono Node 22+ (meglio l'ultima 22.x o 24.x: la 20 non riceve più correzioni di sicurezza) e Java 21:
 
 ```bash
-npm install --prefix test-regole
-npx firebase-tools emulators:exec --only firestore --project demo-quiz-nuoto "npm --prefix test-regole test"
+npm install --prefix test-regole --ignore-scripts
+npx firebase-tools@15.33.0 emulators:exec --only firestore --project demo-quiz-nuoto "npm --prefix test-regole test"
 ```
 
 ## Addio a Netlify

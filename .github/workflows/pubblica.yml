@@ -33,6 +33,12 @@ on:
 permissions:
   contents: read
 
+env:
+  # Versione fissa di firebase-tools (prima era "@latest", cioè l'ultima uscita su npm al momento
+  # della corsa: un pacchetto compromesso sarebbe partito con la chiave Firebase in mano).
+  # Per aggiornarla: cambia solo questo numero.
+  FIREBASE_TOOLS: firebase-tools@15.33.0
+
 concurrency:
   group: pubblica-${{ github.ref }}
   cancel-in-progress: true
@@ -55,14 +61,15 @@ jobs:
           java-version: 21
 
       - name: Installa gli strumenti di prova
-        run: npm install --prefix test-regole --no-audit --no-fund
+        # --ignore-scripts: i pacchetti non possono eseguire script di installazione
+        run: npm install --prefix test-regole --no-audit --no-fund --ignore-scripts
 
       - name: Prove del lavoro Notifiche
         run: npm --prefix notifiche test
 
       - name: Prove con l'emulatore
         run: |
-          npx --yes firebase-tools@latest emulators:exec --only firestore \
+          npx --yes "$FIREBASE_TOOLS" emulators:exec --only firestore \
             --project demo-quiz-nuoto "npm --prefix test-regole test"
 
   pubblica:
@@ -92,10 +99,10 @@ jobs:
 
       - name: Crea il sito quiznuoto se non esiste ancora
         run: |
-          if npx --yes firebase-tools@latest hosting:sites:get quiznuoto --project "$PROGETTO" > /dev/null 2>&1; then
+          if npx --yes "$FIREBASE_TOOLS" hosting:sites:get quiznuoto --project "$PROGETTO" > /dev/null 2>&1; then
             echo "Il sito quiznuoto esiste già."
           else
-            npx --yes firebase-tools@latest hosting:sites:create quiznuoto --project "$PROGETTO" --non-interactive \
+            npx --yes "$FIREBASE_TOOLS" hosting:sites:create quiznuoto --project "$PROGETTO" --non-interactive \
               || { echo "::error::Non riesco a creare il sito quiznuoto: forse il nome è già usato da un altro progetto. Crealo dalla console (Hosting → Aggiungi un altro sito) o scegli un altro nome in firebase.json."; exit 1; }
           fi
 
@@ -110,7 +117,7 @@ jobs:
       - name: Pubblica sito e regole
         run: |
           set -o pipefail
-          if ! npx --yes firebase-tools@latest deploy --only hosting,firestore:rules \
+          if ! npx --yes "$FIREBASE_TOOLS" deploy --only hosting,firestore:rules \
                --project "$PROGETTO" --non-interactive --force 2>&1 | tee "$RUNNER_TEMP/deploy.log"; then
             msg=$(grep -v '^\s*$' "$RUNNER_TEMP/deploy.log" | tail -n 25 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=Pubblicazione::$msg"

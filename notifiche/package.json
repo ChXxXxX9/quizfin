@@ -4,7 +4,7 @@
   "private": true,
   "description": "Invia le notifiche push di Quiz Nuoto: avvisi dell'admin e promemoria streak.",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": { "node": ">=22" },
   "scripts": {
     "start": "node src/main.js",
     "test": "node --test \"test/*.test.js\""
