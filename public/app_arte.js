@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const errText = (e) => (window.QuizErrors ? window.QuizErrors.text(e) : (e?.message || String(e)));
 
   const OWNER_ADMIN_UID = 'uPsEYGwQwrXZEwt5KID6DnVt51p2';
   const WORKS = Array.isArray(window.ARTE_WORKS) ? window.ARTE_WORKS : [];
@@ -106,7 +107,7 @@
         await loadAdminPendingBell();
         await loadCourseAnnouncements();
         await loadSudokuLeaderboards();
-      } catch(error){ setGate('Errore account', error.message); }
+      } catch(error){ setGate('Errore account', errText(error)); }
     });
   }
 

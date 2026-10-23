@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const errText = (e) => (window.QuizErrors ? window.QuizErrors.text(e) : (e?.message || String(e)));
 
   const COURSE_ID = 'bagnino';
   const COURSE_LABEL = 'Assistenti Bagnanti Piscina';
@@ -363,7 +364,7 @@
       try {
         await userDocRef().set(state, { merge: true });
       } catch (error) {
-        showAuthMessage(`Salvataggio cloud non riuscito: ${error.message}`);
+        showAuthMessage(`Salvataggio cloud non riuscito: ${errText(error)}`);
       }
     }, 350);
   }
@@ -388,7 +389,7 @@
       return;
     }
 
-    fb.auth.getRedirectResult?.().catch((error) => showAuthMessage(error.message));
+    fb.auth.getRedirectResult?.().catch((error) => showAuthMessage(errText(error)));
 
     fb.auth.onAuthStateChanged(async (user) => {
       currentUser = user;
@@ -509,7 +510,7 @@
         await loadCloudState();
         await loadAnnouncements();
       } catch (error) {
-        lockApp('Errore account', escapeHtml(error.message), 'Errore');
+        lockApp('Errore account', escapeHtml(errText(error)), 'Errore');
         setAuthControls('blocked');
       }
     });
@@ -645,7 +646,7 @@
       renderAll();
       checkBadgeUnlocks(false);
     } catch (error) {
-      showAuthMessage(`Caricamento cloud non riuscito: ${error.message}`);
+      showAuthMessage(`Caricamento cloud non riuscito: ${errText(error)}`);
       state = loadLocalState();
       renderAll();
     }
@@ -746,7 +747,7 @@ ${html}`));
       await window.FirebaseQuiz.auth.signInWithEmailAndPassword(email, password);
       showAuthMessage('Accesso eseguito.');
     } catch (error) {
-      showAuthMessage(error.message);
+      showAuthMessage(errText(error));
     }
   }
 
@@ -788,7 +789,7 @@ ${html}`));
       els.requestGoogleStatus.textContent = `Google collegato: ${user.email || user.uid}`;
       await window.FirebaseQuiz.auth.signOut();
     } catch (error) {
-      els.requestGoogleStatus.textContent = error.message;
+      els.requestGoogleStatus.textContent = errText(error);
     }
   }
 
@@ -826,7 +827,7 @@ ${html}`));
       try { await window.FirebaseQuiz.auth.signInWithEmailAndPassword(email, password); } catch {}
       setTimeout(closeAccountRequestModal, 1200);
     } catch (error) {
-      els.accountRequestMessage.textContent = error.message;
+      els.accountRequestMessage.textContent = errText(error);
     } finally {
       if (els.submitAccountRequestBtn) els.submitAccountRequestBtn.disabled = false;
     }
@@ -858,7 +859,7 @@ ${html}`));
       await window.FirebaseQuiz.auth.currentUser?.reload?.();
       location.reload();
     } catch (error) {
-      els.termsMessage.textContent = error.message;
+      els.termsMessage.textContent = errText(error);
     } finally {
       if (els.acceptTermsBtn) els.acceptTermsBtn.disabled = false;
     }
@@ -872,7 +873,7 @@ ${html}`));
       await window.FirebaseQuiz.auth.sendPasswordResetEmail(email);
       showAuthMessage('Email di reimpostazione password inviata.');
     } catch (error) {
-      showAuthMessage(error.message);
+      showAuthMessage(errText(error));
     }
   }
 
@@ -883,7 +884,7 @@ ${html}`));
       await user.sendEmailVerification({ url: `${location.origin}${location.pathname.replace(/[^/]*$/, '')}index.html?emailVerified=1`, handleCodeInApp: false });
       showAuthMessage('Email di verifica reinviata. Controlla anche spam/promozioni.');
     } catch (error) {
-      showAuthMessage(error.message);
+      showAuthMessage(errText(error));
     }
   }
 
@@ -897,7 +898,7 @@ ${html}`));
         await window.FirebaseQuiz.auth.signInWithRedirect(window.FirebaseQuiz.googleProvider);
         return;
       }
-      showAuthMessage(error.message);
+      showAuthMessage(errText(error));
     }
   }
 

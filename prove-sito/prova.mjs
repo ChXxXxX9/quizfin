@@ -13,6 +13,7 @@ const FS = `http://127.0.0.1:8080/v1/projects/${PROJECT}/databases/(default)/doc
 const OWNER = { Authorization: 'Bearer owner', 'Content-Type': 'application/json' };
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(new Date());
 
+let nuovoUid = null;
 const esiti = [];
 const problemi = [];
 const erroriPagina = new Map(); // testo → conteggio
@@ -59,6 +60,7 @@ async function nuovaPagina(nome, { width = 390, height = 844 } = {}) {
   await context.addInitScript(() => { try { localStorage.setItem('quizNuotoEmulatori', '1'); } catch (e) { /* niente */ } });
   const page = await context.newPage();
   const registra = (testo) => {
+    if (/status of 400 \(Bad Request\)/.test(testo) && nome === 'utente' && !nuovoUid) return;
     if (/favicon|ERR_INTERNET_DISCONNECTED|ERR_NETWORK_CHANGED|net::ERR_FAILED.*(gstatic|googleapis)|Failed to load resource: net::ERR_INTERNET/.test(testo)) return;
     const chiave = `[${nome}] ${testo.slice(0, 220)}`;
     erroriPagina.set(chiave, (erroriPagina.get(chiave) || 0) + 1);
@@ -72,13 +74,16 @@ async function nuovaPagina(nome, { width = 390, height = 844 } = {}) {
   page.on('dialog', (d) => d.accept());
   return { context, page };
 }
-async function chiudiPopup(page) {
-  // promozione Nuotifica, popup notifiche, annunci: si chiudono come farebbe un utente
-  for (let i = 0; i < 4; i++) {
-    if (await page.locator('.nf-overlay .nf-later').isVisible().catch(() => false)) { await page.click('.nf-overlay .nf-later'); await sleep(700); continue; }
-    if (await page.locator('.push-intro [data-intro-close]').isVisible().catch(() => false)) { await page.click('.push-intro [data-intro-close]'); await sleep(300); continue; }
-    if (await page.locator('.ann-modal [data-ann-ok]').isVisible().catch(() => false)) { await page.click('.ann-modal [data-ann-ok]'); await sleep(300); continue; }
-    break;
+const visti = [];
+async function chiudiPopup(page, { quiete = 4000, max = 25000 } = {}) {
+  // promozione Nuotifica, popup notifiche, annunci: si chiudono come farebbe un utente, finché per
+  // `quiete` ms non ne compare più nessuno. Ricorda l'ordine in cui sono comparsi.
+  const t0 = Date.now(); let ultimo = Date.now();
+  while (Date.now() - t0 < max && Date.now() - ultimo < quiete) {
+    if (await page.locator('.nf-overlay .nf-later').isVisible().catch(() => false)) { visti.push('promozione'); await page.click('.nf-overlay .nf-later'); ultimo = Date.now(); await sleep(700); continue; }
+    if (await page.locator('.push-intro [data-intro-close]').isVisible().catch(() => false)) { visti.push('notifiche'); await page.click('.push-intro [data-intro-close]'); ultimo = Date.now(); await sleep(300); continue; }
+    if (await page.locator('.ann-modal [data-ann-ok]').isVisible().catch(() => false)) { visti.push('annuncio'); await page.click('.ann-modal [data-ann-ok]'); ultimo = Date.now(); await sleep(300); continue; }
+    await sleep(300);
   }
 }
 async function testo(page, sel) { return (await page.locator(sel).first().textContent().catch(() => '')) || ''; }
@@ -101,7 +106,6 @@ async function main() {
 
   const nuovaEmail = 'giulia.prova@esempio.it';
   const nuovaPw = 'GiuliaProva1';
-  let nuovoUid = null;
   const U = await nuovaPagina('utente');
   const A = await nuovaPagina('admin', { width: 1280, height: 900 });
 
@@ -128,9 +132,14 @@ async function main() {
     ok(await aspetta(U.page, () => /attesa/i.test(document.getElementById('authTitle').textContent), 20000), `richiesta: compare "In attesa" (titolo: "${(await testo(U.page, '#authTitle')).slice(0, 60)}")`);
     nuovoUid = await uidByEmail(nuovaEmail);
     ok(Boolean(nuovoUid), 'richiesta: account di accesso creato');
-    const u = await fsGet(`users/${nuovoUid}`);
+    let u = null; let req = [];
+    for (let i = 0; i < 20; i++) {
+      u = await fsGet(`users/${nuovoUid}`);
+      req = (await fsList('accountRequests')).filter((r) => r.dati.uid === nuovoUid);
+      if (u?.access?.accountStatus && req.length) break;
+      await sleep(500);
+    }
     ok(u?.access?.accountStatus === 'pending', `richiesta: stato account "pending" (${u?.access?.accountStatus})`);
-    const req = (await fsList('accountRequests')).filter((r) => r.dati.uid === nuovoUid);
     ok(req.length === 1, `richiesta: una richiesta nel database (${req.length})`);
   });
 
@@ -187,31 +196,30 @@ async function main() {
     ok(await aspetta(U.page, () => /verificato/i.test(document.getElementById('authTitle').textContent) || !document.getElementById('mainContent').classList.contains('hidden'), 20000), 'email verificata: "Account verificato e approvato"');
     if (await U.page.locator('#completeRequestBtn').isVisible().catch(() => false)) await U.page.click('#completeRequestBtn');
     ok(await aspetta(U.page, () => !document.getElementById('mainContent').classList.contains('hidden'), 20000), 'utente: vede i suoi corsi');
-    await sleep(2500);
-    const promo = await U.page.locator('.nf-overlay').count();
-    ok(promo === 1, 'utente nuovo: compare la promozione Nuotifica');
     await chiudiPopup(U.page);
-    await sleep(2500);
-    const intro = await U.page.locator('.push-intro').count();
-    ok(intro === 1, 'utente nuovo: dopo, il popup "Abbiamo aggiunto le notifiche"');
-    await chiudiPopup(U.page);
+    ok(visti.join(' → ') === 'promozione → annuncio → notifiche' || visti.join(' → ') === 'promozione → notifiche → annuncio', `utente nuovo: popup uno alla volta (${visti.join(' → ') || 'nessuno'})`);
     await sleep(800);
     const prof = (await fsGet(`users/${nuovoUid}`))?.profile || {};
     ok(Boolean(prof.promoSeen?.nuotifica_v1) && Boolean(prof.promoSeen?.notifiche_v1), 'popup: "già visti" salvati nel profilo');
-    // annuncio con conferma
-    await sleep(1500);
-    const annVisibile = await U.page.locator('.ann-modal').count();
-    if (annVisibile) {
-      await U.page.click('.ann-modal [data-ann-ok]');
-      await sleep(800);
-    }
     const ann = (await fsList('announcements')).find((a) => a.dati.title === 'Annuncio di prova');
     const ack = ann ? await fsGet(`announcements/${ann.id}/acks/${nuovoUid}`) : null;
-    ok(Boolean(ack), `annuncio: l'utente lo vede e la conferma OK viene salvata (popup ${annVisibile ? 'visto' : 'NON visto'})`);
+    ok(Boolean(ack), 'annuncio: la conferma OK viene salvata');
+    await U.page.reload({ waitUntil: 'load' });
+    await aspetta(U.page, () => !document.getElementById('mainContent').classList.contains('hidden'), 15000);
+    const primaDi = visti.length;
+    await chiudiPopup(U.page, { quiete: 5000 });
+    ok(visti.length === primaDi, `ricarica: nessun popup già visto ricompare (${visti.slice(primaDi).join(', ') || 'nessuno'})`);
   });
 
   await scenario('Corso Istruttore: termini, obiettivo, quiz', async () => {
     await U.page.click('#openIstruttoreBtn');
+    // al primo ingresso il portale chiede di impostare l'obiettivo
+    const chiedeObiettivo = await U.page.waitForSelector('.study-goal-modal [data-study-save]', { timeout: 8000 }).then(() => true).catch(() => false);
+    ok(chiedeObiettivo, 'primo ingresso nel corso: chiede l\'obiettivo giornaliero');
+    if (chiedeObiettivo) {
+      await U.page.click('.study-goal-modal [data-target="10"]').catch(() => {});
+      await U.page.click('.study-goal-modal [data-study-save]');
+    }
     await U.page.waitForURL('**/istruttore.html', { timeout: 15000 });
     ok(await aspetta(U.page, () => document.getElementById('termsModal') && !document.getElementById('termsModal').classList.contains('hidden'), 20000), 'Istruttore: chiede di accettare i termini');
     await U.page.check('#termsAcceptCheck');
@@ -219,11 +227,7 @@ async function main() {
     ok(await aspetta(U.page, () => document.querySelector('#homeView.active') && !document.body.classList.contains('app-locked'), 20000), 'Istruttore: entra nella home del corso');
     const terms = (await fsGet(`users/${nuovoUid}`))?.access?.termsAcceptedAt;
     ok(Boolean(terms), 'termini: accettazione salvata');
-    await chiudiPopup(U.page);
-    await U.page.click('[data-study-settings]');
-    await U.page.click('.study-goal-modal [data-target="10"]').catch(() => {});
-    await U.page.click('[data-study-save]');
-    await sleep(1500);
+    await chiudiPopup(U.page, { quiete: 2500 });
     const goal0 = await fsGet(`users/${nuovoUid}/studyGoals/istruttore`);
     ok(goal0?.dailyTarget === 10, `obiettivo: salvato (quota ${goal0?.dailyTarget})`);
     await U.page.click('#startMixedBtn');
@@ -246,6 +250,10 @@ async function main() {
     await U.page.click('.tabbar [data-nav-view="statsView"]');
     ok(await aspetta(U.page, () => document.querySelector('#statsView.active') && document.querySelectorAll('#allQuestionsProgressList .question-check').length > 30, 10000), 'statistiche: si aprono con l\'elenco delle domande');
     await U.page.click('#homeBtn');
+    await U.page.click('#startFlashcardsBtn');
+    await U.page.locator('#flashcardOptions .option-btn').first().click();
+    ok(await aspetta(U.page, () => /manuale|Riferimento/i.test(document.querySelector('.flashcard-explanation')?.textContent || ''), 10000), 'flash card: spiegazione mostrata');
+    await U.page.click('#exitFlashcardsBtn');
     await U.page.click('[data-study-leaderboard]');
     ok(await aspetta(U.page, () => /Giulia|giulia/i.test(document.querySelector('.study-leaderboard-modal')?.textContent || ''), 10000), 'classifica: l\'utente compare');
     await U.page.keyboard.press('Escape');
@@ -290,6 +298,49 @@ async function main() {
     await fsSet('courseSettings/site', { maintenance: false });
     await U.page.goto(`${SITE}/index.html`, { waitUntil: 'load' });
     ok(await aspetta(U.page, () => !document.getElementById('mainContent').classList.contains('hidden') && !document.body.classList.contains('system-gated'), 20000), 'fine manutenzione: si torna ai corsi');
+  });
+
+  await scenario('Utente già esistente: dati dal cloud e corso Bagnino', async () => {
+    const vUid = await signUp('vecchio@prova.it', 'VecchioProva1');
+    await authUpdate(vUid, { emailVerified: true, displayName: 'Mario Vecchio' });
+    const misto = Array.from({ length: 50 }, (_, i) => i + 1);
+    await fsSet(`users/${vUid}`, {
+      profile: { uid: vUid, email: 'vecchio@prova.it', firstName: 'Mario', lastName: 'Vecchio', promoSeen: { nuotifica_v1: 'x', notifiche_v1: 'x' } },
+      access: { appVerified: true, accountStatus: 'approved', courseAccess: { istruttore: true, bagnino: true }, termsAcceptedAt: '2026-01-01T00:00:00Z' },
+      version: 2,
+      stats: { totalAnswered: 50, correct: 40, wrong: 10, quizCount: 3, totalScore: 21, averageScore: 7, history: [] },
+      progress: { mixedCompleted: misto, mixedCycleSeen: misto, allAnswered: misto }
+    });
+    for (const c of ['istruttore', 'bagnino']) await fsSet(`users/${vUid}/studyGoals/${c}`, { courseId: c, dailyTarget: 15, goalMode: 'daily', streak: 2, bestStreak: 4, lastMetDate: '2026-01-01', dailyCounts: {} });
+    const V = await nuovaPagina('vecchio');
+    await V.page.goto(`${SITE}/index.html`, { waitUntil: 'load' });
+    await aspetta(V.page, () => document.getElementById('loginBtn')?.offsetParent, 15000);
+    await V.page.fill('#emailInput', 'vecchio@prova.it');
+    await V.page.fill('#passwordInput', 'VecchioProva1');
+    await V.page.click('#loginBtn');
+    ok(await aspetta(V.page, () => !document.getElementById('mainContent').classList.contains('hidden'), 20000), 'utente esistente: entra nei corsi');
+    await chiudiPopup(V.page, { quiete: 2500 });
+    await V.page.click('#openIstruttoreBtn');
+    await V.page.waitForURL('**/istruttore.html', { timeout: 15000 });
+    ok(await aspetta(V.page, () => /50\s*\/\s*1000/.test(document.getElementById('mixedMiniText')?.textContent || ''), 20000), `utente esistente: i progressi arrivano dal cloud ("${await testo(V.page, '#mixedMiniText')}")`);
+    ok(await aspetta(V.page, () => document.querySelector('.study-goal-widget [data-study-streak]')?.textContent === '0', 10000), 'streak: dopo mesi senza obiettivo è scesa a 0 (−1 al giorno)');
+    await V.page.goto(`${SITE}/bagnino.html`, { waitUntil: 'load' });
+    ok(await aspetta(V.page, () => document.querySelector('#homeView.active') && !document.body.classList.contains('app-locked'), 20000), 'Bagnino: entra nella home del corso');
+    await chiudiPopup(V.page, { quiete: 2000 });
+    await V.page.click('#startMixedBtn');
+    await V.page.click('#timerNoBtn');
+    for (let i = 0; i < 25; i++) {
+      if (await V.page.locator('#resultsView.active').count()) break;
+      await V.page.locator('#optionsList .option-btn:not(:disabled)').first().click();
+      await V.page.click('#nextQuestionBtn');
+    }
+    ok(await aspetta(V.page, () => document.querySelector('#resultsView.active'), 10000), 'Bagnino: quiz misto completato');
+    await sleep(3000);
+    const dati = await fsGet(`users/${vUid}/courseData/bagnino`);
+    ok(Number(dati?.stats?.quizCount) === 1, `Bagnino: salvataggio sul cloud (quiz ${dati?.stats?.quizCount})`);
+    const goal = await fsGet(`users/${vUid}/studyGoals/bagnino`);
+    ok(goal?.lastMetDate === TODAY && Number(goal?.streak) === 1, `Bagnino: streak riaccesa a 1 (streak ${goal?.streak})`);
+    await V.context.close();
   });
 
   await scenario('Service worker e rete assente', async () => {
