@@ -1,0 +1,39 @@
+name: Ripristino Istruttore
+
+# Si avvia a mano (Actions → "Ripristino Istruttore" → Run workflow).
+# Rimette le statistiche del corso Istruttore perse tra il 19 e il 23 ottobre 2026, ricavandole dalla
+# classifica (risposte giuste) e dall'obiettivo giornaliero (risposte date).
+# "prova" mostra solo cosa cambierebbe; "applica" scrive (i valori di prima restano salvati nel documento).
+# Nelle annotazioni solo numeri: niente nomi, email o identificativi (il repository è pubblico).
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: 'prova = mostra soltanto · applica = scrive'
+        type: choice
+        options: [prova, applica]
+        default: prova
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ripristino-istruttore
+  cancel-in-progress: false
+
+jobs:
+  ripristina:
+    name: Ripristina le statistiche
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Ripristino
+        working-directory: notifiche
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          RIPRISTINO_MODO: ${{ inputs.modo }}
+        run: node src/ripristino.js
