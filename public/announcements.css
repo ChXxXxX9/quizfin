@@ -64,8 +64,11 @@
 
   /* ---------- Popup ---------- */
   html.ann-lock, html.ann-lock body { overflow: hidden; }
-  .ann-modal .ann-card { position: relative; display: grid; gap: 0; padding: 0; overflow: hidden; max-height: min(92dvh, 900px); }
-  .ann-modal .ann-card > .ann { border: 0; border-radius: 0; overflow: auto; }
+  /* Colonna: il testo prende lo spazio che resta e scorre, il pulsante resta sempre in fondo e visibile.
+     (Con la griglia di prima il testo lungo veniva tagliato e non si poteva scorrere.) */
+  .ann-modal .ann-card { position: relative; display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; max-height: 92vh; max-height: min(92dvh, 900px); }
+  .ann-modal .ann-card > .ann { flex: 1 1 auto; min-height: 0; border: 0; border-radius: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  .ann-modal .ann-card > .ann-footer { flex: none; }
   .ann-modal .ann-x { position: absolute; top: 12px; right: 12px; z-index: 3; width: 40px; height: 40px; background: color-mix(in oklch, var(--surface) 85%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
   .ann-modal .ann-card:has(> .ann-x) .ann:not(.has-media) .ann-kicker { margin-right: 52px; }
   .ann-modal .ann-card:has(> .ann-x) .ann:not(.has-media) .ann-title { padding-right: 8px; }
@@ -76,8 +79,9 @@
 
   /* ---------- Schermo intero ---------- */
   .ann-modal-full { align-items: stretch; padding: 0; background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .ann-modal-full .ann-card { width: 100%; max-width: none; max-height: none; height: 100dvh; border-radius: 0; grid-template-rows: minmax(0, 1fr) auto; animation: annFull .45s var(--ease); }
-  .ann-modal-full .ann-card > .ann { display: grid; align-content: center; justify-items: center; background: radial-gradient(120% 70% at 50% 0%, var(--ann-soft), var(--bg) 70%); }
+  .ann-modal-full .ann-card { width: 100%; max-width: none; max-height: none; height: 100vh; height: 100dvh; border-radius: 0; animation: annFull .45s var(--ease); }
+  /* centrato quando ci sta, dall'alto quando è lungo (altrimenti l'inizio del testo non si raggiunge) */
+  .ann-modal-full .ann-card > .ann { display: grid; align-content: start; align-content: safe center; justify-items: center; background: radial-gradient(120% 70% at 50% 0%, var(--ann-soft), var(--bg) 70%); }
   .ann-modal-full .ann::before { inset: 0 0 auto 0; width: auto; height: 6px; }
   .ann-modal-full .ann-media { width: 100%; max-width: 760px; margin: 28px auto 0; border-radius: var(--r-l); overflow: hidden; background: transparent; }
   .ann-modal-full .ann-media img { max-height: 46dvh; object-fit: contain; }
