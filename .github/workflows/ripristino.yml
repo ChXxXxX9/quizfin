@@ -13,6 +13,9 @@ on:
         type: choice
         options: [prova, applica]
         default: prova
+  # Un push su un ramo "dati/ripristino-..." fa solo la prova (non scrive)
+  push:
+    branches: ['dati/ripristino-*']
 
 permissions:
   contents: read
@@ -35,5 +38,5 @@ jobs:
         working-directory: notifiche
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          RIPRISTINO_MODO: ${{ inputs.modo }}
+          RIPRISTINO_MODO: ${{ github.event_name == 'workflow_dispatch' && inputs.modo || 'prova' }}
         run: node src/ripristino.js
