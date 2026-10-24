@@ -521,7 +521,7 @@
       const status = a.banned ? 'Bloccato'
         : (!a.appVerified && hasCourses) ? '⚠ Da sistemare'
         : (a.appVerified && a.requiresEmailVerification === true && !u.profile?.emailVerified) ? 'Verifica email'
-        : a.appVerified ? 'OK'
+        : a.appVerified ? (u.progressRestore ? 'OK · ripristinato' : 'OK')
         : a.accountStatus === 'rejected' ? 'Rifiutato'
         : 'In attesa';
       return `
@@ -588,6 +588,12 @@
         const notes = [];
         if (!a.banned && !a.appVerified && corsi.length) notes.push(`<p><strong>Stato incoerente:</strong> ha corsi abilitati (${escapeHtml(corsi.join(', '))}) ma l'account non risulta approvato, quindi non riesce a entrare in nessun corso. Premi <strong>Approva account</strong> per farlo entrare, oppure togli i corsi e salva.</p>`);
         if (a.appVerified && a.requiresEmailVerification === true && !u.profile?.emailVerified) notes.push(`<p><strong>Fermo alla verifica email:</strong> per entrare deve aprire il link che riceve per email. Se non gli arriva (guardate anche nello spam) puoi togliere questo passaggio.</p><button id="skipEmailVerificationBtn" class="secondary-btn small-btn" type="button">Togli l'obbligo di verifica email</button>`);
+        const rip = u.progressRestore;
+        if (rip?.before && rip?.after) {
+          const quando = rip.at?.toDate ? rip.at.toDate() : (rip.at ? new Date(rip.at) : null);
+          const data = quando && !Number.isNaN(quando.getTime()) ? quando.toLocaleDateString('it-IT') : '';
+          notes.push(`<p><strong>Progressi Istruttore ripristinati${data ? ` il ${escapeHtml(data)}` : ''}:</strong> tra il 19 e il 23 ottobre un errore del sito gli aveva azzerato i progressi. Statistiche rimesse dalla classifica: quiz ${Number(rip.before.quizCount || 0)} → ${Number(rip.after.quizCount || 0)}, risposte ${Number(rip.before.totalAnswered || 0)} → ${Number(rip.after.totalAnswered || 0)}, giuste ${Number(rip.before.correct || 0)} → ${Number(rip.after.correct || 0)}. Le domande di quei quiz torneranno nel quiz misto. Puoi scrivergli con un annuncio personale (Annunci → destinatario: un utente).</p>`);
+        }
         return notes.length ? `<div class="admin-warning-box">${notes.join('')}</div>` : '';
       })()}
       <p class="message">Email verificata Firebase: <strong>${u.profile?.emailVerified ? 'sì' : 'no'}</strong> · Approvato admin: <strong>${u.access?.appVerified ? 'sì' : 'no'}</strong>${adminInfo?.active ? ` · Ruolo admin: <strong>${escapeHtml(adminInfo.role || 'admin')}</strong>` : ''}${u.access?.banReason ? ` · Motivo blocco: <strong>${escapeHtml(u.access.banReason)}</strong>` : ''}</p>
