@@ -984,14 +984,17 @@
     const info = courseStateInfo(s);
     const isSite = scopeKey === 'site';
     const hideBtn = isSite ? '' : `<button class="${s.hidden ? 'danger-btn' : 'secondary-btn'} small-btn" type="button" data-scope-action="toggle-hidden" data-scope="${scopeKey}">${s.hidden ? 'Mostra' : 'Nascondi'}</button>`;
+    // "Novità": bordo rosso con l'etichetta "Novità" sul riquadro del corso o della funzione
+    const novitaBtn = isSite ? '' : `<button class="${s.novita ? 'danger-btn' : 'secondary-btn'} small-btn" type="button" data-scope-action="toggle-novita" data-scope="${scopeKey}" aria-pressed="${s.novita ? 'true' : 'false'}">${s.novita ? 'Togli “Novità”' : '✨ Segna come Novità'}</button>`;
     return `
       <div class="request-card course-settings-card">
         <div class="user-headline">
           <strong>${escapeHtml(scopeLabel(scopeKey))}</strong>
-          <span class="status-pill${info.tone ? ' ' + info.tone : ''}">${escapeHtml(info.short)}</span>
+          <span>${s.novita && !isSite ? '<span class="status-pill danger">Novità</span> ' : ''}<span class="status-pill${info.tone ? ' ' + info.tone : ''}">${escapeHtml(info.short)}</span></span>
         </div>
         <p class="request-meta">${escapeHtml(info.detail)}</p>
         <div class="request-actions">
+          ${novitaBtn}
           ${hideBtn}
           <button class="${s.blocked ? 'danger-btn' : 'secondary-btn'} small-btn" type="button" data-scope-action="toggle-blocked" data-scope="${scopeKey}">${s.blocked ? 'Riattiva accesso' : 'Blocca accesso'}</button>
           <button class="secondary-btn small-btn" type="button" data-scope-action="block-reason" data-scope="${scopeKey}">Blocca con motivo</button>
@@ -1010,7 +1013,8 @@
       'toggle-hidden': toggleScopeHidden,
       'toggle-blocked': toggleScopeBlocked,
       'block-reason': blockScopeWithReason,
-      'toggle-maintenance': toggleScopeMaintenance
+      'toggle-maintenance': toggleScopeMaintenance,
+      'toggle-novita': toggleScopeNovita
     };
     const handler = handlers[action];
     if (!handler) return;
@@ -1045,6 +1049,12 @@
 
     courseSettings[scopeKey] = { ...(courseSettings[scopeKey] || {}), ...patch };
     renderCourseSettings();
+  }
+
+  async function toggleScopeNovita(scopeKey) {
+    const next = !(courseSettings[scopeKey]?.novita);
+    await saveCourseSettings(scopeKey, { novita: next });
+    showToast(next ? `${scopeLabel(scopeKey)}: ora ha l'etichetta “Novità”.` : `${scopeLabel(scopeKey)}: etichetta “Novità” tolta.`);
   }
 
   async function toggleScopeHidden(scopeKey) {

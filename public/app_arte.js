@@ -158,7 +158,6 @@
   }
 
   function applyFeatureGatingUI() {
-    if (isAdmin) return;
     const targets = {
       mixed: [els.startMixedBtn],
       corrente: [els.startCorrenteBtn],
@@ -169,6 +168,9 @@
       stats: [els.showStatsBtn]
     };
     Object.entries(targets).forEach(([feature, buttons]) => {
+      // "Novità": lo vedono tutti, admin compreso
+      buttons.forEach((btn) => window.QuizNovita?.mark(btn, getFeatureState(feature).novita === true));
+      if (isAdmin) return;
       const blocked = Boolean(getFeatureState(feature).blocked || getFeatureState(feature).maintenance || getFeatureState(feature).hidden);
       buttons.forEach((btn) => { if (btn && blocked) btn.disabled = true; });
     });

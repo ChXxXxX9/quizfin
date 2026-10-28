@@ -315,6 +315,7 @@
   }
   function updateCourseCard(course, allowed, card, openBtn, requestBtn, textEl){
     const g = getCourseGlobalState(course);
+    window.QuizNovita?.mark(card, g.novita === true);
     const globalHidden = Boolean(g.hidden) && !isAdmin;
     card.classList.toggle('hidden', globalHidden);
     if (globalHidden) return;

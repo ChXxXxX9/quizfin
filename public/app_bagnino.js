@@ -553,6 +553,7 @@
           els.authSubtitle.textContent = 'Accesso admin attivo. Nessuna verifica email richiesta.';
           els.authStatus.textContent = 'Admin';
           setAuthControls('signedIn');
+          applyFeatureGatingUI();
           await loadCloudState(COURSE_ID === 'istruttore' ? accountSnap : null);
           await loadAnnouncements();
           return;
@@ -674,7 +675,6 @@
   }
 
   function applyFeatureGatingUI() {
-    if (currentIsAdmin) return;
     const targets = {
       mixed: [els.startMixedBtn],
       topic: [els.startTopicBtn],
@@ -685,6 +685,9 @@
       stats: [els.showStatsBtn]
     };
     Object.entries(targets).forEach(([feature, buttons]) => {
+      // "Novità": lo vedono tutti, admin compreso
+      buttons.forEach((btn) => window.QuizNovita?.mark(btn, getFeatureState(feature).novita === true));
+      if (currentIsAdmin) return;
       const blocked = Boolean(getFeatureState(feature).blocked || getFeatureState(feature).maintenance || getFeatureState(feature).hidden);
       buttons.forEach((btn) => { if (btn && blocked) btn.disabled = true; });
     });

@@ -191,3 +191,9 @@ Nota deploy:
 - Dati: `video/domande-per-sezione.json` (fonte) e `video/controllo-abbinamento-domande.xlsx`; `node dati/genera-quiz-video.mjs` controlla l'abbinamento con le domande del sito e genera `public/video-quiz.js`. Domande e correttore restano quelli di `questions.js`.
 - Progressi nel documento utente: `progress.videoSections`, `progress.videoCycle`, `wrong.videoSections` (una lista per sezione).
 - Admin: interruttore "Quiz per video" tra le funzioni del corso Istruttore.
+
+## v56 - "Novità" dal pannello admin
+
+- Admin → Corsi: accanto a Nascondi/Blocca/Manutenzione c'è **✨ Segna come Novità** per ogni corso e ogni funzione (non per "tutto il sito"). Salvato in `courseSettings/{ambito}.novita`.
+- Sul sito il riquadro prende un bordo rosso con l'etichetta "NOVITÀ" in alto: corsi nel portale, funzioni di Istruttore, Bagnino e Arte (anche per l'admin). Se è un pulsante (es. scheda tecnica), bordo e etichetta stanno attorno al pulsante.
+- Codice condiviso: `shell.js` → `window.QuizNovita.mark(elemento, attivo)`; stile in `style.css` (`.is-novita`, `.novita-badge`).
