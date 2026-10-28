@@ -259,6 +259,27 @@
     window.addEventListener('offline', syncNetwork);
   }
 
+  /* ---------------- Novità ---------------- */
+  // L'admin può segnare un corso o una funzione come "Novità" (courseSettings: novita: true):
+  // il riquadro prende un bordo rosso e un'etichetta "Novità" in alto.
+  function markNovita(el, on) {
+    if (!el) return;
+    const box = el.closest('.tile, .hero, .course-card') || el;
+    const card = box.matches('.tile, .hero, .course-card');
+    box.classList.toggle('is-novita', Boolean(on));
+    box.classList.toggle('novita-card', Boolean(on) && card);
+    box.classList.toggle('novita-inline', Boolean(on) && !card);
+    let badge = Array.from(box.children).find((c) => c.classList?.contains('novita-badge'));
+    if (on && !badge) {
+      badge = document.createElement('span');
+      badge.className = 'novita-badge';
+      badge.textContent = 'Novità';
+      box.appendChild(badge);
+    }
+    if (!on && badge) badge.remove();
+  }
+  window.QuizNovita = Object.freeze({ mark: markNovita });
+
   // Gli script dei corsi si inizializzano su DOMContentLoaded: partiamo dopo di loro.
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(start, 0));
   else setTimeout(start, 0);

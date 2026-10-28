@@ -210,6 +210,12 @@ async function main() {
       await sleep(700);
     }
     ok(true, 'admin: aperte tutte le sezioni del pannello');
+    // "Novità" sul Quiz per video, dal pannello (regole vere: scrive solo l'admin)
+    await A.page.click('[data-section="courses"]');
+    await A.page.click('[data-scope-action="toggle-novita"][data-scope="istruttore.video"]');
+    let impostazione = null;
+    for (let i = 0; i < 20 && impostazione?.novita !== true; i++) { await sleep(300); impostazione = await fsGet('courseSettings/istruttore.video'); }
+    ok(impostazione?.novita === true, 'admin: "Novità" attivata sul Quiz per video');
   });
 
   await scenario('Admin: annuncio con conferma e notifica', async () => {
@@ -300,6 +306,7 @@ async function main() {
     ok(await aspetta(U.page, () => document.querySelector('#statsView.active') && document.querySelectorAll('#allQuestionsProgressList .question-check').length > 30, 10000), 'statistiche: si aprono con l\'elenco delle domande');
     // Quiz per video: elenco, quiz della sezione (5 domande), salvataggio, niente streak
     await U.page.click('#homeBtn');
+    ok(await aspetta(U.page, () => { const t = document.getElementById('openVideoQuizBtn'); return t?.classList.contains('is-novita') && t.querySelector('.novita-badge')?.textContent === 'Novità'; }, 10000), 'Novità: il riquadro Quiz per video ha bordo ed etichetta');
     await U.page.click('#openVideoQuizBtn');
     ok(await aspetta(U.page, () => document.querySelector('#videoView.active') && document.querySelectorAll('.vq-section').length === 23 && document.querySelectorAll('[data-video-start]').length === 23, 10000), 'quiz per video: elenco con 23 sezioni, un quiz per sezione');
     ok(/senza guardare i video/.test(await testo(U.page, '#videoQuizNote')), 'quiz per video: avviso sull\'abbinamento');
