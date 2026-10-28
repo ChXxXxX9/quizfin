@@ -38,7 +38,7 @@ const APP_SHELL = [
   './account.css',
   './results.js',
   './badge-96.png',
-  './questions.js',
+  './questions.js', './video-quiz.js',
   './explanations.js',
   './bagnino_questions.js',
   './bagnino_explanations.js',

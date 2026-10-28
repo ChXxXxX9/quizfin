@@ -98,7 +98,7 @@
 
         <section class="section" aria-labelledby="secTrain">
           <div class="section-head"><h2 id="secTrain">Allenati</h2></div>
-          <div class="tiles"><div class="tile-grid">
+          <div class="tiles"><div class="tile-grid dense">
             <div class="tile is-wide">
               <div class="tile-head">
                 <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg></span>
@@ -110,6 +110,14 @@
                 <div class="tile-progress"><div class="mini-progress"><span id="topicMiniBar"></span></div><span class="progress-label" id="topicMiniText">0 / 0</span></div>
               </div>
             </div>
+
+            <button id="openVideoQuizBtn" class="tile is-wide" type="button">
+              <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="15" height="14" rx="3"/><path d="m17 10 5-3v10l-5-3"/></svg></span>
+              <svg class="tile-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              <span class="tile-title">Quiz per video</span>
+              <span class="tile-desc">Scegli una videolezione della FAD: 20 domande sui suoi argomenti.</span>
+              <span class="tile-meta" id="videoQuizHomeText">29 video · 23 sezioni</span>
+            </button>
 
             <button id="startWrongMixedBtn" class="tile" type="button">
               <span class="tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
@@ -189,6 +197,7 @@
             </div>
           </div>
           <div class="progress-track"><span id="sessionProgressBar"></span></div>
+          <p id="quizNote" class="quiz-note hidden"></p>
 
           <article class="question-card">
             <div class="question-tools">
@@ -327,6 +336,20 @@
       </section>
 
       <!-- ============ FAD ============ -->
+      <!-- ============ QUIZ PER VIDEO ============ -->
+      <section id="videoView" class="view" aria-labelledby="videoTitle">
+        <div class="view-head">
+          <button id="backHomeFromVideoBtn" class="icon-btn bordered" type="button" aria-label="Torna alla home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+          <div>
+            <p class="eyebrow">Quiz per video</p>
+            <h2 id="videoTitle">Scegli il video</h2>
+          </div>
+        </div>
+        <p class="vq-intro">Tocca un video: parte un quiz da 20 domande sui suoi argomenti (se la sezione ne ha meno, tutte quelle che ci sono). Le domande sono sempre le 1000 del corso, con le stesse risposte.</p>
+        <p id="videoQuizNote" class="vq-note"></p>
+        <div id="videoSectionList" class="vq-list"></div>
+      </section>
+
       <section id="fadView" class="view" aria-labelledby="fadTitle">
         <div class="view-head">
           <button id="backHomeFromFadBtn" class="icon-btn bordered" type="button" aria-label="Torna alla home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
@@ -488,6 +511,7 @@
   <script src="results.js"></script>
   <script src="fad.js"></script>
   <script src="questions.js"></script>
+  <script src="video-quiz.js"></script>
   <script src="app.js"></script>
   <script src="shell.js"></script>
   <script src="promo.js"></script>
