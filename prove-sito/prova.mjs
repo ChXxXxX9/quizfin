@@ -301,9 +301,9 @@ async function main() {
     // Quiz per video: elenco, quiz della sezione (5 domande), salvataggio, niente streak
     await U.page.click('#homeBtn');
     await U.page.click('#openVideoQuizBtn');
-    ok(await aspetta(U.page, () => document.querySelector('#videoView.active') && document.querySelectorAll('.vq-section').length === 23 && document.querySelectorAll('.vq-video').length === 29, 10000), 'quiz per video: elenco con 23 sezioni e 29 video');
+    ok(await aspetta(U.page, () => document.querySelector('#videoView.active') && document.querySelectorAll('.vq-section').length === 23 && document.querySelectorAll('[data-video-start]').length === 23, 10000), 'quiz per video: elenco con 23 sezioni, un quiz per sezione');
     ok(/senza guardare i video/.test(await testo(U.page, '#videoQuizNote')), 'quiz per video: avviso sull\'abbinamento');
-    await U.page.click('[data-video-section="nuoto-per-salvamento-in-corsia"]');
+    await U.page.click('[data-video-start="nuoto-per-salvamento-in-corsia"]');
     await U.page.click('#timerNoBtn');
     ok(/1\s*\/\s*5/.test(await testo(U.page, '#questionCounter')) && !(await U.page.locator('#quizNote.hidden').count()), 'quiz per video: 5 domande (tutte quelle della sezione) e avviso nel quiz');
     for (let i = 0; i < 8; i++) {

@@ -44,7 +44,7 @@ if (errori.length) {
   process.exit(1);
 }
 const uscita = {
-  nota: "L'abbinamento delle domande ai video è stato fatto senza guardare i video: per ogni domanda è stato scelto il video più probabile, in base al testo della domanda e al titolo del video.",
+  nota: "Le domande sono state abbinate alle sezioni dei video senza guardare i video: per ogni domanda è stata scelta la sezione più probabile, in base al testo della domanda e ai titoli dei video.",
   sezioni: sezioni.map((s) => ({
     id: s.id,
     titolo: s.titolo,

@@ -118,7 +118,7 @@
     els.backHomeFromVideoBtn?.addEventListener('click', () => showView('homeView'));
     els.videoSectionList?.addEventListener('click', (event) => {
       const start = event.target.closest('[data-video-start]');
-      if (start) { if (requireLogin()) startVideoQuiz(start.dataset.videoSection, Number(start.dataset.videoStart)); return; }
+      if (start) { if (requireLogin()) startVideoQuiz(start.dataset.videoStart); return; }
       const wrong = event.target.closest('[data-video-wrong]');
       if (wrong) { if (requireLogin()) startWrongVideoQuiz(wrong.dataset.videoWrong); }
     });
@@ -1252,11 +1252,10 @@ ${html}`));
     els.markedCountText.textContent = `${state.markedQuestions.length} domande segnate`;
     els.flashStatsText.textContent = `${state.flashStats.total} flash card fatte`;
     if (els.videoQuizHomeText) {
-      const videos = VIDEO_SECTIONS.reduce((n, sec) => n + sec.video.length, 0);
       const started = VIDEO_SECTIONS.filter((sec) => (state.progress.videoSections?.[sec.id] || []).length).length;
       els.videoQuizHomeText.textContent = started
-        ? `${started} di ${VIDEO_SECTIONS.length} sezioni iniziate · ${videos} video`
-        : `${videos} video · ${VIDEO_SECTIONS.length} sezioni`;
+        ? `${started} di ${VIDEO_SECTIONS.length} sezioni iniziate`
+        : `${VIDEO_SECTIONS.length} sezioni`;
     }
 
     const accuracy = state.stats.totalAnswered ? Math.round((state.stats.correct / state.stats.totalAnswered) * 100) : 0;
@@ -1367,13 +1366,10 @@ ${html}`));
   }
 
   // ---- Quiz per video ----
-  // Ogni video apre il quiz della sua sezione (i video della stessa sezione hanno le stesse domande).
-  // 20 domande, senza ripetizioni finché non le hai fatte tutte; se la sezione ne ha meno, tutte quelle che ci sono.
-  function videoTitleOf(section, videoId) {
-    return section.video.find((v) => v.id === videoId)?.titolo || section.video[0]?.titolo || section.titolo;
-  }
-
-  function startVideoQuiz(sectionId, videoId) {
+  // Un quiz per ogni sezione delle videolezioni FAD (non per singolo video: le parti I e II di una
+  // sezione sono un solo quiz). 20 domande, senza ripetizioni finché non le hai fatte tutte;
+  // se la sezione ne ha meno, tutte quelle che ci sono.
+  function startVideoQuiz(sectionId) {
     if (blockedByFeature('video')) return;
     const section = VIDEO_SECTION_BY_ID.get(sectionId);
     if (!section) return showToast('Video non trovato.');
@@ -1392,8 +1388,7 @@ ${html}`));
       freshLap = seen.size > 0;
     }
     if (freshLap) { saveState(); showToast(`Hai fatto tutte le domande di "${section.titolo}": si ricomincia un nuovo giro, rimescolate.`); }
-    const title = videoTitleOf(section, videoId);
-    requestTimerAndStart('video', shuffle(selected), `Video: ${title}`, null, { allowHints: true, videoSection: sectionId, videoTitle: title });
+    requestTimerAndStart('video', shuffle(selected), `Quiz per video · ${section.titolo}`, null, { allowHints: true, videoSection: sectionId });
   }
 
   function startWrongVideoQuiz(sectionId) {
@@ -1403,25 +1398,23 @@ ${html}`));
     const wrongIds = normalizeIdArray(state.wrong.videoSections?.[sectionId]);
     const selected = shuffle(wrongIds.map((id) => QUESTIONS_BY_ID.get(id)).filter(Boolean));
     if (!selected.length) return showToast(`Non hai errori da rifare in "${section.titolo}".`);
-    requestTimerAndStart('wrongVideo', selected, `Errori video: ${section.titolo}`, null, { allowHints: true, videoSection: sectionId, videoTitle: section.titolo });
+    requestTimerAndStart('wrongVideo', selected, `Errori · ${section.titolo}`, null, { allowHints: true, videoSection: sectionId });
   }
 
   function renderVideoSections() {
     if (!els.videoSectionList) return;
     if (els.videoQuizNote) els.videoQuizNote.textContent = VIDEO_NOTE;
     if (!VIDEO_SECTIONS.length) {
-      els.videoSectionList.innerHTML = '<div class="empty-state">Elenco dei video non disponibile.</div>';
+      els.videoSectionList.innerHTML = '<div class="empty-state">Elenco delle sezioni non disponibile.</div>';
       return;
     }
-    const play = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></svg>';
-    const go = '<svg class="vq-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+    const go = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>';
     els.videoSectionList.innerHTML = VIDEO_SECTIONS.map((sec, index) => {
       const total = sec.domande.length;
       const ids = new Set(sec.domande);
       const done = normalizeIdArray(state.progress.videoSections?.[sec.id]).filter((id) => ids.has(id)).length;
       const wrong = normalizeIdArray(state.wrong.videoSections?.[sec.id]).filter((id) => ids.has(id)).length;
       const perQuiz = Math.min(VIDEO_QUIZ_SIZE, total);
-      const shared = sec.video.length > 1 ? '<p class="vq-shared">I video di questa sezione hanno le stesse domande.</p>' : '';
       return `
         <article class="vq-section">
           <header class="vq-head">
@@ -1431,18 +1424,10 @@ ${html}`));
               <p class="vq-meta">${total} domande · ${perQuiz} a quiz</p>
             </div>
           </header>
-          <div class="vq-videos">
-            ${sec.video.map((v) => `
-              <button class="vq-video" type="button" data-video-start="${v.id}" data-video-section="${escapeHtml(sec.id)}">
-                <span class="vq-play">${play}</span>
-                <span class="vq-video-title">${escapeHtml(v.titolo)}</span>
-                <span class="vq-cta">Quiz${go}</span>
-              </button>`).join('')}
-          </div>
-          ${shared}
-          <div class="vq-foot">
-            <div class="tile-progress"><div class="mini-progress"><span style="width:${percent(done, total)}%"></span></div><span class="progress-label">${done} / ${total}</span></div>
-            <button class="secondary-btn small-btn vq-wrong" type="button" data-video-wrong="${escapeHtml(sec.id)}" ${wrong ? '' : 'disabled'}>${wrong ? `Rifai gli errori (${wrong})` : 'Nessun errore'}</button>
+          <div class="tile-progress"><div class="mini-progress"><span style="width:${percent(done, total)}%"></span></div><span class="progress-label">${done} / ${total}</span></div>
+          <div class="vq-actions">
+            <button class="primary-btn vq-start" type="button" data-video-start="${escapeHtml(sec.id)}">Inizia il quiz ${go}</button>
+            <button class="secondary-btn vq-wrong" type="button" data-video-wrong="${escapeHtml(sec.id)}" ${wrong ? '' : 'disabled'}>${wrong ? `Rifai gli errori (${wrong})` : 'Nessun errore'}</button>
           </div>
         </article>`;
     }).join('');

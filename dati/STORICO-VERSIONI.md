@@ -185,9 +185,9 @@ Nota deploy:
 
 ## v55 - Quiz per video (Istruttore)
 
-- Nuova modalità **Quiz per video**: in home il riquadro apre l'elenco delle 23 sezioni della FAD con i loro 29 video. Ogni video apre un quiz da 20 domande della sua sezione (se la sezione ne ha meno, tutte quelle che ci sono); i video della stessa sezione hanno le stesse domande. Senza ripetizioni finché non le hai fatte tutte.
+- Nuova modalità **Quiz per video**: in home il riquadro apre l'elenco delle 23 sezioni delle videolezioni FAD. Un quiz per sezione (non per singolo video: le parti I e II dello stesso argomento sono un solo quiz), da 20 domande; se la sezione ne ha meno, tutte quelle che ci sono. Senza ripetizioni finché non le hai fatte tutte.
 - Per ogni sezione: barra delle domande fatte e "Rifai gli errori". Non conta per obiettivo giornaliero e streak (come il quiz per argomento); conta nelle statistiche.
-- Avviso, nell'elenco e durante il quiz: l'abbinamento domande-video è stato fatto senza guardare i video, scegliendo il video più probabile in base alla domanda e al titolo.
+- Avviso, nell'elenco e durante il quiz: le domande sono state abbinate alle sezioni senza guardare i video, scegliendo la sezione più probabile in base alla domanda e ai titoli dei video.
 - Dati: `video/domande-per-sezione.json` (fonte) e `video/controllo-abbinamento-domande.xlsx`; `node dati/genera-quiz-video.mjs` controlla l'abbinamento con le domande del sito e genera `public/video-quiz.js`. Domande e correttore restano quelli di `questions.js`.
 - Progressi nel documento utente: `progress.videoSections`, `progress.videoCycle`, `wrong.videoSections` (una lista per sezione).
 - Admin: interruttore "Quiz per video" tra le funzioni del corso Istruttore.
