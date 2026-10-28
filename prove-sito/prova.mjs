@@ -298,6 +298,27 @@ async function main() {
     await U.page.evaluate(() => document.querySelectorAll('.modal:not(.hidden)').forEach((m) => { if (!m.id) m.remove(); else m.classList.add('hidden'); }));
     await U.page.click('.tabbar [data-nav-view="statsView"]');
     ok(await aspetta(U.page, () => document.querySelector('#statsView.active') && document.querySelectorAll('#allQuestionsProgressList .question-check').length > 30, 10000), 'statistiche: si aprono con l\'elenco delle domande');
+    // Quiz per video: elenco, quiz della sezione (5 domande), salvataggio, niente streak
+    await U.page.click('#homeBtn');
+    await U.page.click('#openVideoQuizBtn');
+    ok(await aspetta(U.page, () => document.querySelector('#videoView.active') && document.querySelectorAll('.vq-section').length === 23 && document.querySelectorAll('[data-video-start]').length === 23, 10000), 'quiz per video: elenco con 23 sezioni, un quiz per sezione');
+    ok(/senza guardare i video/.test(await testo(U.page, '#videoQuizNote')), 'quiz per video: avviso sull\'abbinamento');
+    await U.page.click('[data-video-start="nuoto-per-salvamento-in-corsia"]');
+    await U.page.click('#timerNoBtn');
+    ok(/1\s*\/\s*5/.test(await testo(U.page, '#questionCounter')) && !(await U.page.locator('#quizNote.hidden').count()), 'quiz per video: 5 domande (tutte quelle della sezione) e avviso nel quiz');
+    for (let i = 0; i < 8; i++) {
+      if (await U.page.locator('#resultsView.active').count()) break;
+      await U.page.locator('#optionsList .option-btn:not(:disabled)').first().click();
+      await U.page.click('#nextQuestionBtn');
+    }
+    ok(await aspetta(U.page, () => document.querySelector('#resultsView.active'), 10000), 'quiz per video: arriva ai risultati');
+    await sleep(3000);
+    const dopoVideo = await fsGet(`users/${nuovoUid}`);
+    const fatteVideo = (dopoVideo?.progress?.videoSections?.['nuoto-per-salvamento-in-corsia'] || []).length;
+    ok(fatteVideo === 5 && Number(dopoVideo?.stats?.quizCount) === 2, `quiz per video: salvato sul cloud (sezione ${fatteVideo}/5, quiz ${dopoVideo?.stats?.quizCount})`);
+    const goalVideo = await fsGet(`users/${nuovoUid}/studyGoals/istruttore`);
+    ok(Number(goalVideo?.dailyCounts?.[TODAY] || 0) === Number(goal?.dailyCounts?.[TODAY] || 0), 'quiz per video: non conta per l\'obiettivo e la streak');
+    await U.page.evaluate(() => document.querySelectorAll('.modal:not(.hidden), .study-milestone-overlay').forEach((m) => { if (!m.id) m.remove(); else m.classList.add('hidden'); }));
     await U.page.click('#homeBtn');
     await U.page.click('#startFlashcardsBtn');
     await U.page.locator('#flashcardOptions .option-btn').first().click();

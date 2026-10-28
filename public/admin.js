@@ -887,7 +887,8 @@
       { key: 'marked', label: 'Domande salvate' },
       { key: 'flashcards', label: 'Flashcard' },
       { key: 'stats', label: 'Statistiche' },
-      { key: 'fad', label: 'FAD (videolezioni)' }
+      { key: 'fad', label: 'FAD (videolezioni)' },
+      { key: 'video', label: 'Quiz per video' }
     ],
     bagnino: [
       { key: 'mixed', label: 'Quiz misto' },

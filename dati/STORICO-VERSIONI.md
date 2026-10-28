@@ -182,3 +182,12 @@ Nota deploy:
 - Confronto completo delle 1000 domande con `2024_11_16_1000_Domande.pdf` e `2024_11_16_Correttore.pdf` (comprese le correzioni a mano del 16/11/2024): resoconto in `controllo_pdf_2026-10-23.json`.
 - Lettere giuste: tutte uguali al correttore (le 22 correzioni erano già applicate). Domanda 964: nel correttore la risposta è cancellata; nel sito resta C ("La percezione dell'impedimento…"), come nel correttore prima della cancellatura.
 - Corretti: 271 e 277 (118 → 112 come nel PDF), 275 e 285 (testo estraneo "112" in coda alla risposta D), spazi dopo i trattini e spazi doppi in 38 risposte. Spiegazioni 271, 275, 341 allineate (112).
+
+## v55 - Quiz per video (Istruttore)
+
+- Nuova modalità **Quiz per video**: in home il riquadro apre l'elenco delle 23 sezioni delle videolezioni FAD. Un quiz per sezione (non per singolo video: le parti I e II dello stesso argomento sono un solo quiz), da 20 domande; se la sezione ne ha meno, tutte quelle che ci sono. Senza ripetizioni finché non le hai fatte tutte.
+- Per ogni sezione: barra delle domande fatte e "Rifai gli errori". Non conta per obiettivo giornaliero e streak (come il quiz per argomento); conta nelle statistiche.
+- Avviso, nell'elenco e durante il quiz: le domande sono state abbinate alle sezioni senza guardare i video, scegliendo la sezione più probabile in base alla domanda e ai titoli dei video.
+- Dati: `video/domande-per-sezione.json` (fonte) e `video/controllo-abbinamento-domande.xlsx`; `node dati/genera-quiz-video.mjs` controlla l'abbinamento con le domande del sito e genera `public/video-quiz.js`. Domande e correttore restano quelli di `questions.js`.
+- Progressi nel documento utente: `progress.videoSections`, `progress.videoCycle`, `wrong.videoSections` (una lista per sezione).
+- Admin: interruttore "Quiz per video" tra le funzioni del corso Istruttore.

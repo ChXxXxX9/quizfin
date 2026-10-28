@@ -17,6 +17,15 @@
   const TOPICS = [...new Set(QUESTIONS.map((q) => q.topic))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
   const LEGACY_TOPIC_ALIASES = { 'La cultura': 'La Cultura dell’Acqua' };
   const TOTAL_QUESTIONS = QUESTIONS.length;
+  // Quiz per video: sezioni della FAD con le loro domande (public/video-quiz.js)
+  const VIDEO_DATA = window.QUIZ_VIDEO && Array.isArray(window.QUIZ_VIDEO.sezioni) ? window.QUIZ_VIDEO : { nota: '', sezioni: [] };
+  const VIDEO_SECTIONS = VIDEO_DATA.sezioni
+    .map((s) => ({ ...s, domande: (s.domande || []).filter((id) => QUESTIONS_BY_ID.has(id)) }))
+    .filter((s) => s.domande.length && Array.isArray(s.video) && s.video.length);
+  const VIDEO_SECTION_BY_ID = new Map(VIDEO_SECTIONS.map((s) => [s.id, s]));
+  const VIDEO_SECTION_IDS = VIDEO_SECTIONS.map((s) => s.id);
+  const VIDEO_QUIZ_SIZE = 20;
+  const VIDEO_NOTE = VIDEO_DATA.nota || '';
   const MAX_HISTORY = 80;
   const MAX_RECENT_MIXED = 5;
   const OWNER_ADMIN_UID = 'uPsEYGwQwrXZEwt5KID6DnVt51p2';
@@ -72,7 +81,7 @@
   function bindElements() {
     const ids = [
       'themeToggle', 'accountBtn', 'adminBtn', 'adminBellBtn', 'adminPendingBadge', 'installAppBtn', 'homeBtn', 'authCard', 'mainContent', 'authTitle', 'authSubtitle', 'authStatus', 'authControls', 'emailInput', 'passwordInput',
-      'loginBtn', 'registerBtn', 'googleBtn', 'forgotPasswordBtn', 'resendVerificationBtn', 'logoutBtn', 'authMessage', 'homeView', 'quizView', 'flashcardView', 'markedView', 'resultsView', 'statsView',
+      'loginBtn', 'registerBtn', 'googleBtn', 'forgotPasswordBtn', 'resendVerificationBtn', 'logoutBtn', 'authMessage', 'homeView', 'quizView', 'flashcardView', 'markedView', 'resultsView', 'statsView', 'videoView', 'openVideoQuizBtn', 'backHomeFromVideoBtn', 'videoSectionList', 'videoQuizNote', 'videoQuizHomeText', 'quizNote',
       'heroStats', 'mixedMiniBar', 'mixedMiniText', 'topicSelect', 'topicMiniBar', 'topicMiniText', 'startMixedBtn',
       'startTopicBtn', 'startWrongMixedBtn', 'startWrongTopicBtn', 'startMarkedBtn', 'markedCountText', 'startFlashcardsBtn', 'ripassoneCard', 'startRipassoneBtn', 'ripassoneTimerText', 'examoneCard', 'startExamoneBtn', 'examoneLockText', 'examoneStatusText', 'flashStatsText', 'showStatsBtn', 'announcementsPanel',
       'exitFlashcardsBtn', 'flashcardProgressTitle', 'flashcardCounter', 'flashcardTopic', 'flashcardQuestion', 'flashcardOptions', 'flashcardFeedback', 'flashcardMarkBtn', 'flashcardExplainBtn', 'flashcardNextBtn', 'exitQuizBtn', 'quizModeLabel', 'quizProgressTitle', 'questionCounter', 'quizTimer', 'sessionProgressBar',
@@ -105,6 +114,14 @@
     els.showStatsBtn.addEventListener('click', () => { if (!requireLogin()) return; if (blockedByFeature('stats')) return; renderStats(); showView('statsView'); });
     els.openFadBtn?.addEventListener('click', () => { if (!requireLogin()) return; if (blockedByFeature('fad')) return; openFad(); });
     els.backHomeFromFadBtn?.addEventListener('click', () => showView('homeView'));
+    els.openVideoQuizBtn?.addEventListener('click', () => { if (!requireLogin()) return; if (blockedByFeature('video')) return; showView('videoView'); });
+    els.backHomeFromVideoBtn?.addEventListener('click', () => showView('homeView'));
+    els.videoSectionList?.addEventListener('click', (event) => {
+      const start = event.target.closest('[data-video-start]');
+      if (start) { if (requireLogin()) startVideoQuiz(start.dataset.videoStart); return; }
+      const wrong = event.target.closest('[data-video-wrong]');
+      if (wrong) { if (requireLogin()) startWrongVideoQuiz(wrong.dataset.videoWrong); }
+    });
     els.fadGoalBtn?.addEventListener('click', openFadGoalModal);
     els.fadVideoListEl?.addEventListener('click', handleFadVideoToggle);
     els.fadGoalSaveBtn?.addEventListener('click', saveFadGoalFromModal);
@@ -220,11 +237,15 @@
         // invece di bloccarsi chiedendo un reset manuale.
         mixedCycleSeen: [],
         topicsCycle: progressTopicsCycle,
-        allAnswered: []
+        allAnswered: [],
+        // Quiz per video: domande fatte e "giro" corrente per sezione della FAD
+        videoSections: emptyVideoMap(),
+        videoCycle: emptyVideoMap()
       },
       wrong: {
         mixed: [],
-        topics: wrongTopics
+        topics: wrongTopics,
+        videoSections: emptyVideoMap()
       },
       byTopic,
       mixedTopicErrors,
@@ -289,8 +310,12 @@
     });
 
     merged.wrong.mixed = normalizeIdArray(incoming.wrong?.mixed);
+    merged.progress.videoSections = normalizeVideoMap(incoming.progress?.videoSections);
+    merged.progress.videoCycle = normalizeVideoMap(incoming.progress?.videoCycle);
+    merged.wrong.videoSections = normalizeVideoMap(incoming.wrong?.videoSections);
     const inferredAnswered = [
       ...merged.progress.allAnswered,
+      ...flatten(Object.values(merged.progress.videoSections)),
       ...merged.progress.mixedCompleted,
       ...flatten(TOPICS.map((topic) => merged.progress.topics[topic] || [])),
       ...normalizeIdArray(incoming.wrong?.mixed),
@@ -356,6 +381,18 @@
 
   function flatten(value) {
     return value.flatMap((item) => Array.isArray(item) ? item : []);
+  }
+
+  // Una lista per ogni sezione video, sempre tutte presenti: con il salvataggio "merge" una lista
+  // svuotata (errori corretti, azzeramento) deve arrivare vuota sul cloud, non sparire.
+  function emptyVideoMap() {
+    return Object.fromEntries(VIDEO_SECTION_IDS.map((id) => [id, []]));
+  }
+  function normalizeVideoMap(value) {
+    const out = emptyVideoMap();
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return out;
+    VIDEO_SECTION_IDS.forEach((id) => { out[id] = normalizeIdArray(value[id]); });
+    return out;
   }
 
   function normalizeIdArray(value) {
@@ -462,6 +499,11 @@
       out.mixedTopicErrors[topic] = Math.max(Number(cloud.mixedTopicErrors?.[topic] || 0), Number(local.mixedTopicErrors?.[topic] || 0));
     });
     out.wrong.mixed = unionIds(cloud.wrong?.mixed, local.wrong?.mixed);
+    VIDEO_SECTION_IDS.forEach((id) => {
+      out.progress.videoSections[id] = unionIds(cloud.progress?.videoSections?.[id], local.progress?.videoSections?.[id]);
+      out.progress.videoCycle[id] = unionIds(cloud.progress?.videoCycle?.[id], local.progress?.videoCycle?.[id]);
+      out.wrong.videoSections[id] = unionIds(cloud.wrong?.videoSections?.[id], local.wrong?.videoSections?.[id]);
+    });
     out.markedQuestions = unionIds(cloud.markedQuestions, local.markedQuestions);
 
     const cs = cloud.stats || {};
@@ -701,7 +743,8 @@
       marked: [els.startMarkedBtn],
       flashcards: [els.startFlashcardsBtn],
       stats: [els.showStatsBtn],
-      fad: [els.openFadBtn]
+      fad: [els.openFadBtn],
+      video: [els.openVideoQuizBtn]
     };
     Object.entries(targets).forEach(([feature, buttons]) => {
       const blocked = Boolean(getFeatureState(feature).blocked || getFeatureState(feature).maintenance || getFeatureState(feature).hidden);
@@ -853,6 +896,15 @@
       state.progress.topics[topic] = scrubArray(state.progress.topics?.[topic], `Quiz per argomento: ${topic}`);
       state.progress.topicsCycle[topic] = scrubArray(state.progress.topicsCycle?.[topic], `Quiz per argomento (giro corrente): ${topic}`);
       state.wrong.topics[topic] = scrubArray(state.wrong.topics?.[topic], `Errori argomento: ${topic}`);
+    });
+
+    state.progress.videoSections = normalizeVideoMap(state.progress.videoSections);
+    state.progress.videoCycle = normalizeVideoMap(state.progress.videoCycle);
+    state.wrong.videoSections = normalizeVideoMap(state.wrong.videoSections);
+    VIDEO_SECTIONS.forEach((sec) => {
+      state.progress.videoSections[sec.id] = scrubArray(state.progress.videoSections[sec.id], `Quiz per video: ${sec.titolo}`);
+      state.progress.videoCycle[sec.id] = scrubArray(state.progress.videoCycle[sec.id], `Quiz per video (giro corrente): ${sec.titolo}`);
+      state.wrong.videoSections[sec.id] = scrubArray(state.wrong.videoSections[sec.id], `Errori video: ${sec.titolo}`);
     });
 
     if (Array.isArray(state.recentMixedQuizErrors)) {
@@ -1199,6 +1251,12 @@ ${html}`));
 
     els.markedCountText.textContent = `${state.markedQuestions.length} domande segnate`;
     els.flashStatsText.textContent = `${state.flashStats.total} flash card fatte`;
+    if (els.videoQuizHomeText) {
+      const started = VIDEO_SECTIONS.filter((sec) => (state.progress.videoSections?.[sec.id] || []).length).length;
+      els.videoQuizHomeText.textContent = started
+        ? `${started} di ${VIDEO_SECTIONS.length} sezioni iniziate`
+        : `${VIDEO_SECTIONS.length} sezioni`;
+    }
 
     const accuracy = state.stats.totalAnswered ? Math.round((state.stats.correct / state.stats.totalAnswered) * 100) : 0;
     const mixedWeak = getWeakestMixedTopicTotal();
@@ -1305,6 +1363,74 @@ ${html}`));
     if (!selected.length) return showToast(`Nessuna domanda disponibile per ${topic}.`);
     if (freshLap) { saveState(); showToast(`Hai risposto a tutte le domande di "${topic}"! Si ricomincia un nuovo giro, rimescolate.`); }
     requestTimerAndStart('topic', selected, `Quiz: ${topic}`, topic, { allowHints: true });
+  }
+
+  // ---- Quiz per video ----
+  // Un quiz per ogni sezione delle videolezioni FAD (non per singolo video: le parti I e II di una
+  // sezione sono un solo quiz). 20 domande, senza ripetizioni finché non le hai fatte tutte;
+  // se la sezione ne ha meno, tutte quelle che ci sono.
+  function startVideoQuiz(sectionId) {
+    if (blockedByFeature('video')) return;
+    const section = VIDEO_SECTION_BY_ID.get(sectionId);
+    if (!section) return showToast('Video non trovato.');
+    const pool = section.domande.map((id) => QUESTIONS_BY_ID.get(id)).filter(Boolean);
+    const size = Math.min(VIDEO_QUIZ_SIZE, pool.length);
+    if (!size) return showToast('Nessuna domanda per questo video.');
+    state.progress.videoCycle = state.progress.videoCycle || emptyVideoMap();
+    const seen = new Set(state.progress.videoCycle[sectionId] || []);
+    let selected = sample(pool.filter((q) => !seen.has(q.id)), size);
+    let freshLap = false;
+    if (selected.length < size) {
+      // giro finito: si completa con le altre domande della sezione e si ricomincia a pescare
+      const chosen = new Set(selected.map((q) => q.id));
+      selected = selected.concat(sample(pool.filter((q) => !chosen.has(q.id)), size - selected.length));
+      state.progress.videoCycle[sectionId] = [];
+      freshLap = seen.size > 0;
+    }
+    if (freshLap) { saveState(); showToast(`Hai fatto tutte le domande di "${section.titolo}": si ricomincia un nuovo giro, rimescolate.`); }
+    requestTimerAndStart('video', shuffle(selected), `Quiz per video · ${section.titolo}`, null, { allowHints: true, videoSection: sectionId });
+  }
+
+  function startWrongVideoQuiz(sectionId) {
+    if (blockedByFeature('video')) return;
+    const section = VIDEO_SECTION_BY_ID.get(sectionId);
+    if (!section) return showToast('Video non trovato.');
+    const wrongIds = normalizeIdArray(state.wrong.videoSections?.[sectionId]);
+    const selected = shuffle(wrongIds.map((id) => QUESTIONS_BY_ID.get(id)).filter(Boolean));
+    if (!selected.length) return showToast(`Non hai errori da rifare in "${section.titolo}".`);
+    requestTimerAndStart('wrongVideo', selected, `Errori · ${section.titolo}`, null, { allowHints: true, videoSection: sectionId });
+  }
+
+  function renderVideoSections() {
+    if (!els.videoSectionList) return;
+    if (els.videoQuizNote) els.videoQuizNote.textContent = VIDEO_NOTE;
+    if (!VIDEO_SECTIONS.length) {
+      els.videoSectionList.innerHTML = '<div class="empty-state">Elenco delle sezioni non disponibile.</div>';
+      return;
+    }
+    const go = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>';
+    els.videoSectionList.innerHTML = VIDEO_SECTIONS.map((sec, index) => {
+      const total = sec.domande.length;
+      const ids = new Set(sec.domande);
+      const done = normalizeIdArray(state.progress.videoSections?.[sec.id]).filter((id) => ids.has(id)).length;
+      const wrong = normalizeIdArray(state.wrong.videoSections?.[sec.id]).filter((id) => ids.has(id)).length;
+      const perQuiz = Math.min(VIDEO_QUIZ_SIZE, total);
+      return `
+        <article class="vq-section">
+          <header class="vq-head">
+            <span class="vq-num">${index + 1}</span>
+            <div>
+              <h3>${escapeHtml(sec.titolo)}</h3>
+              <p class="vq-meta">${total} domande · ${perQuiz} a quiz</p>
+            </div>
+          </header>
+          <div class="tile-progress"><div class="mini-progress"><span style="width:${percent(done, total)}%"></span></div><span class="progress-label">${done} / ${total}</span></div>
+          <div class="vq-actions">
+            <button class="primary-btn vq-start" type="button" data-video-start="${escapeHtml(sec.id)}">Inizia il quiz ${go}</button>
+            <button class="secondary-btn vq-wrong" type="button" data-video-wrong="${escapeHtml(sec.id)}" ${wrong ? '' : 'disabled'}>${wrong ? `Rifai gli errori (${wrong})` : 'Nessun errore'}</button>
+          </div>
+        </article>`;
+    }).join('');
   }
 
   function startWrongMixedQuiz() {
@@ -1629,6 +1755,7 @@ ${html}`));
       finishedByTimeout: false,
       timerWarnings: { five: false, one: false },
       examoneOfficial: Boolean(options.examoneOfficial),
+      videoSection: options.videoSection || null,
       answers: selectedQuestions.map((q) => ({ id: q.id, selectedIndex: null, hintUsed: false, eliminatedIndex: null }))
     };
     lastWrongIds = [];
@@ -1677,6 +1804,11 @@ ${html}`));
     const isMarked = state.markedQuestions.includes(q.id);
 
     els.quizModeLabel.textContent = activeQuiz.label;
+    if (els.quizNote) {
+      const showNote = Boolean(activeQuiz.videoSection && VIDEO_NOTE);
+      els.quizNote.textContent = showNote ? VIDEO_NOTE : '';
+      els.quizNote.classList.toggle('hidden', !showNote);
+    }
     els.quizProgressTitle.textContent = `Domanda ${current}`;
     els.questionCounter.textContent = `${current} / ${total}`;
     setBar(els.sessionProgressBar, percent(activeQuiz.index, total));
@@ -1782,7 +1914,7 @@ ${html}`));
     const wrongIds = results.filter((r) => !r.isCorrect).map((r) => r.question.id);
     const weakestSession = getWeakestTopicFromResults(results);
     lastWrongIds = wrongIds;
-    lastWrongContext = { mode: finishedQuiz.mode, topic: finishedQuiz.topic, label: finishedQuiz.label };
+    lastWrongContext = { mode: finishedQuiz.mode, topic: finishedQuiz.topic, label: finishedQuiz.label, videoSection: finishedQuiz.videoSection || null };
 
     updateStateAfterQuiz(finishedQuiz, results, vote, points, durationSeconds, weakestSession);
     saveState();
@@ -1856,6 +1988,22 @@ ${html}`));
       if (mode === 'wrongTopic' && topic) {
         if (isCorrect) removeId(state.wrong.topics[topic], question.id);
         else addUnique(state.wrong.topics[topic], question.id);
+      }
+
+      const vs = quiz.videoSection;
+      if (vs && VIDEO_SECTION_BY_ID.has(vs) && (mode === 'video' || mode === 'wrongVideo')) {
+        state.progress.videoSections = state.progress.videoSections || emptyVideoMap();
+        state.progress.videoCycle = state.progress.videoCycle || emptyVideoMap();
+        state.wrong.videoSections = state.wrong.videoSections || emptyVideoMap();
+        if (mode === 'video') {
+          state.progress.videoSections[vs] = state.progress.videoSections[vs] || [];
+          state.progress.videoCycle[vs] = state.progress.videoCycle[vs] || [];
+          addUnique(state.progress.videoSections[vs], question.id);
+          addUnique(state.progress.videoCycle[vs], question.id);
+        }
+        state.wrong.videoSections[vs] = state.wrong.videoSections[vs] || [];
+        if (isCorrect) removeId(state.wrong.videoSections[vs], question.id);
+        else addUnique(state.wrong.videoSections[vs], question.id);
       }
     });
 
@@ -1988,6 +2136,10 @@ ${html}`));
   function retryLastMistakes() {
     const selected = lastWrongIds.map((id) => QUESTIONS_BY_ID.get(id)).filter(Boolean);
     if (!selected.length) return showToast('Nessun errore da ripetere.');
+    if (lastWrongContext?.videoSection) {
+      requestTimerAndStart('wrongVideo', shuffle(selected), 'Ripeti errori ultimo quiz', null, { allowHints: true, videoSection: lastWrongContext.videoSection });
+      return;
+    }
     const retryMode = lastWrongContext?.topic ? 'wrongTopic' : 'wrongMixed';
     requestTimerAndStart(retryMode, shuffle(selected), 'Ripeti errori ultimo quiz', lastWrongContext?.topic || null, { allowHints: true });
   }
@@ -2422,12 +2574,13 @@ ${html}`));
       requireLogin();
       return;
     }
-    ['homeView', 'quizView', 'flashcardView', 'markedView', 'resultsView', 'statsView', 'fadView'].forEach((id) => {
+    ['homeView', 'quizView', 'flashcardView', 'markedView', 'resultsView', 'statsView', 'fadView', 'videoView'].forEach((id) => {
       els[id]?.classList.toggle('active', id === viewId);
     });
     if (viewId === 'homeView') renderHomeProgress();
     if (viewId === 'statsView') renderStats();
     if (viewId === 'fadView') renderFad();
+    if (viewId === 'videoView') renderVideoSections();
     // in cima subito: lo scorrimento animato faceva sembrare lento ogni cambio di schermata
     window.scrollTo(0, 0);
   }
