@@ -1,0 +1,27 @@
+{
+  "data": "2026-10-28",
+  "tipo": "controllo in sola lettura (nessun file di domande modificato)",
+  "fonti": [
+    "2024_11_16_1000_Domande.pdf (md5 7d66d1ef9a0ef0fbf30805fee70e6a00)",
+    "2024_11_16_Correttore.pdf (md5 8504bbdb6d2cdd3281e4e5226a766d85)"
+  ],
+  "metodo": "Estrazione da zero delle 1000 domande (tabelle del PDF) e del correttore (testo + correzioni a mano: 23 lettere riscritte, 1 risposta cancellata); contenuto visibile del PDF (correzioni a mano 118 -> 112 nelle domande 271 e 277). Confronto esatto (spazi a parte) con public/questions.js.",
+  "esito": {
+    "domande": 1000,
+    "testo_domanda_uguale": 1000,
+    "risposte_uguali_e_nello_stesso_ordine": 999,
+    "lettera_giusta_uguale_al_correttore": 999,
+    "questions_json_uguale_a_questions_js": true,
+    "da_decidere_dal_proprietario": {
+      "964": "Nel PDF la prima risposta ('Un forte desiderio di soffrire') non ha lettera e nel correttore la risposta è cancellata. Nel sito: A-C come nel PDF, 'Un forte desiderio di soffrire' come D, giusta C (la lettera che c'era sotto la cancellatura)."
+    },
+    "categorie": "Raggruppamento uguale al PDF; nel sito 'La Cultura dell'Acqua' ha le maiuscole e i refusi del PDF (52 'Biofiosiologia', 265 'La cutura') sono uniti alla categoria giusta.",
+    "spiegazioni": "Nessuna spiegazione visibile contraddice il correttore. 22 campi interni (non mostrati) delle domande corrette a mano hanno ancora la lettera vecchia.",
+    "quiz_per_video": "23 sezioni, 1174 abbinamenti, tutti numeri validi, tutte le 1000 domande coperte; nessuna domanda copiata (solo numeri)."
+  },
+  "cronologia_modifiche_file_domande": {
+    "2026-10-18": "importazione iniziale nel repository",
+    "2026-10-23 (#10)": "allineamento al PDF: 271 e 277 (118 -> 112), testo estraneo tolto da 275 e 285, spazi in 38 risposte; spiegazioni 271, 275, 341. Nessuna lettera giusta cambiata.",
+    "dopo il 2026-10-23": "nessuna modifica"
+  }
+}
