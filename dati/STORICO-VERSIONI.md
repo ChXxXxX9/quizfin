@@ -197,3 +197,9 @@ Nota deploy:
 - Admin → Corsi: accanto a Nascondi/Blocca/Manutenzione c'è **✨ Segna come Novità** per ogni corso e ogni funzione (non per "tutto il sito"). Salvato in `courseSettings/{ambito}.novita`.
 - Sul sito il riquadro prende un bordo rosso con l'etichetta "NOVITÀ" in alto: corsi nel portale, funzioni di Istruttore, Bagnino e Arte (anche per l'admin). Se è un pulsante (es. scheda tecnica), bordo e etichetta stanno attorno al pulsante.
 - Codice condiviso: `shell.js` → `window.QuizNovita.mark(elemento, attivo)`; stile in `style.css` (`.is-novita`, `.novita-badge`).
+
+## v57 - Quiz per video: niente ultimi quiz da poche domande
+
+- Quiz da 20; quando nel giro della sezione restano meno di 30 domande si fanno tutte insieme (es. 21 → un quiz da 21, 47 → 20 + 27, 55 → 20 + 20 + 15). Sezioni con meno di 30 domande: quiz unico.
+- Se da un giro di prima resta un pezzetto (meno di 10 domande), il quiz riparte da capo tenendo dentro quelle rimaste (es. 20 fatte su 21 → prossimo quiz da 21, non da 1).
+- Nell'elenco: "quiz unico" oppure "prossimo quiz: N".

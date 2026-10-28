@@ -25,6 +25,10 @@
   const VIDEO_SECTION_BY_ID = new Map(VIDEO_SECTIONS.map((s) => [s.id, s]));
   const VIDEO_SECTION_IDS = VIDEO_SECTIONS.map((s) => s.id);
   const VIDEO_QUIZ_SIZE = 20;
+  // Quando nel giro restano meno di 30 domande si fanno tutte insieme: niente ultimo quiz da 1 o 5
+  // domande (21 → un quiz da 21, 45 → 20 + 25). Le sezioni con meno di 30 domande hanno un quiz unico.
+  const VIDEO_QUIZ_MERGE_BELOW = 30;
+  const VIDEO_LEFTOVER_MIN = 10;
   const VIDEO_NOTE = VIDEO_DATA.nota || '';
   const MAX_HISTORY = 80;
   const MAX_RECENT_MIXED = 5;
@@ -1372,25 +1376,37 @@ ${html}`));
   // Un quiz per ogni sezione delle videolezioni FAD (non per singolo video: le parti I e II di una
   // sezione sono un solo quiz). 20 domande, senza ripetizioni finché non le hai fatte tutte;
   // se la sezione ne ha meno, tutte quelle che ci sono.
+  // Domande della sezione già uscite nel giro corrente e quelle ancora da fare
+  function videoLap(section) {
+    const pool = section.domande.filter((id) => QUESTIONS_BY_ID.has(id));
+    const cycle = new Set(state.progress.videoCycle?.[section.id] || []);
+    const unseen = pool.filter((id) => !cycle.has(id));
+    const seen = pool.length - unseen.length;
+    // giro finito, oppure ne resta un pezzetto da un giro di prima: si riparte da capo (con quelle rimaste dentro)
+    const restart = !unseen.length || (unseen.length < VIDEO_LEFTOVER_MIN && seen > 0 && pool.length >= VIDEO_LEFTOVER_MIN);
+    const remaining = restart ? pool.length : unseen.length;
+    const size = remaining < VIDEO_QUIZ_MERGE_BELOW ? remaining : VIDEO_QUIZ_SIZE;
+    return { pool, unseen, seen, restart, size };
+  }
+
   function startVideoQuiz(sectionId) {
     if (blockedByFeature('video')) return;
     const section = VIDEO_SECTION_BY_ID.get(sectionId);
     if (!section) return showToast('Video non trovato.');
-    const pool = section.domande.map((id) => QUESTIONS_BY_ID.get(id)).filter(Boolean);
-    const size = Math.min(VIDEO_QUIZ_SIZE, pool.length);
-    if (!size) return showToast('Nessuna domanda per questo video.');
+    const lap = videoLap(section);
+    if (!lap.size) return showToast('Nessuna domanda per questo video.');
     state.progress.videoCycle = state.progress.videoCycle || emptyVideoMap();
-    const seen = new Set(state.progress.videoCycle[sectionId] || []);
-    let selected = sample(pool.filter((q) => !seen.has(q.id)), size);
-    let freshLap = false;
-    if (selected.length < size) {
-      // giro finito: si completa con le altre domande della sezione e si ricomincia a pescare
-      const chosen = new Set(selected.map((q) => q.id));
-      selected = selected.concat(sample(pool.filter((q) => !chosen.has(q.id)), size - selected.length));
+    let ids;
+    if (lap.restart) {
+      // prima quelle rimaste del giro vecchio, poi le altre a caso
+      const left = new Set(lap.unseen);
+      ids = [...shuffle(lap.unseen), ...shuffle(lap.pool.filter((id) => !left.has(id)))].slice(0, lap.size);
       state.progress.videoCycle[sectionId] = [];
-      freshLap = seen.size > 0;
+      if (!lap.unseen.length && lap.seen) { saveState(); showToast(`Hai fatto tutte le domande di "${section.titolo}": si ricomincia un nuovo giro, rimescolate.`); }
+    } else {
+      ids = sample(lap.unseen, lap.size);
     }
-    if (freshLap) { saveState(); showToast(`Hai fatto tutte le domande di "${section.titolo}": si ricomincia un nuovo giro, rimescolate.`); }
+    const selected = ids.map((id) => QUESTIONS_BY_ID.get(id)).filter(Boolean);
     requestTimerAndStart('video', shuffle(selected), `Quiz per video · ${section.titolo}`, null, { allowHints: true, videoSection: sectionId });
   }
 
@@ -1417,14 +1433,15 @@ ${html}`));
       const ids = new Set(sec.domande);
       const done = normalizeIdArray(state.progress.videoSections?.[sec.id]).filter((id) => ids.has(id)).length;
       const wrong = normalizeIdArray(state.wrong.videoSections?.[sec.id]).filter((id) => ids.has(id)).length;
-      const perQuiz = Math.min(VIDEO_QUIZ_SIZE, total);
+      const next = videoLap(sec).size;
+      const meta = total < VIDEO_QUIZ_MERGE_BELOW ? `${total} domande · quiz unico` : `${total} domande · prossimo quiz: ${next}`;
       return `
         <article class="vq-section">
           <header class="vq-head">
             <span class="vq-num">${index + 1}</span>
             <div>
               <h3>${escapeHtml(sec.titolo)}</h3>
-              <p class="vq-meta">${total} domande · ${perQuiz} a quiz</p>
+              <p class="vq-meta">${meta}</p>
             </div>
           </header>
           <div class="tile-progress"><div class="mini-progress"><span style="width:${percent(done, total)}%"></span></div><span class="progress-label">${done} / ${total}</span></div>
