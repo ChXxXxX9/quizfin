@@ -1,0 +1,43 @@
+name: Recupero classifica
+
+# Si avvia a mano (Actions → "Recupero classifica" → Run workflow).
+# Istruttore: aggiunge alla classifica "risposte giuste" quelle dei quiz per argomento e per video fatti prima
+# che il sito iniziasse a contarle. "prova" mostra soltanto, "applica" scrive (una volta sola per utente).
+# Nelle annotazioni solo numeri: niente nomi, email o identificativi (il repository è pubblico).
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: 'prova = mostra soltanto · applica = scrive'
+        type: choice
+        options: [prova, applica]
+        default: prova
+      prima:
+        description: 'Conta i quiz conclusi prima di questa data (ISO, es. 2026-11-10T11:30:00Z; vuoto = adesso)'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: recupero-classifica
+  cancel-in-progress: false
+
+jobs:
+  recupera:
+    name: Recupera le risposte giuste
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Recupero
+        working-directory: notifiche
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          RECUPERO_MODO: ${{ inputs.modo }}
+          RECUPERO_PRIMA: ${{ inputs.prima }}
+        run: node src/recupero-classifica.js
