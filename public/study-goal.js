@@ -252,10 +252,11 @@
     }
   }
 
-  // ---- Classifica "risposte corrette" (solo quiz misto, indipendente dall'obiettivo/streak) ----
+  // ---- Classifica "risposte corrette" (indipendente dall'obiettivo/streak) ----
+  // Istruttore: quiz misto, per argomento e per video. Bagnino e Arte: quiz misto.
   // Scrive sullo stesso documento per-corso della classifica streak (un solo doc per utente per
   // corso), ma non richiede affatto che un obiettivo giornaliero sia stato impostato o raggiunto:
-  // conta semplicemente le risposte giuste nel quiz misto, per sempre, corso per corso.
+  // conta le risposte giuste dei quiz che il corso fa valere (vedi sotto), per sempre, corso per corso.
   async function recordCorrectAnswers(course, correctCount) {
     const add = Math.floor(Number(correctCount));
     if (!currentUser || !db() || !Number.isFinite(add) || add <= 0) return;
@@ -759,9 +760,11 @@
     document.body.appendChild(modal);
     modal.querySelectorAll('[data-study-leader-close]').forEach((btn) => btn.addEventListener('click', () => modal.remove()));
 
+    // Quali quiz contano per la classifica delle risposte giuste (deciso corso per corso)
+    const correctFrom = course === 'istruttore' ? 'quiz misto, per argomento e per video' : 'quiz misto';
     const captions = {
       streak: 'Streak reale di questo corso: +1 per ogni giorno con l’obiettivo raggiunto, −1 per ogni giorno saltato. Nessuna email viene mostrata.',
-      correct: 'Risposte giuste nel quiz misto di questo corso, per sempre. Nessuna email viene mostrata.'
+      correct: `Risposte giuste nei ${correctFrom} di questo corso, per sempre. Nessuna email viene mostrata.`
     };
 
     async function renderTab(kind) {
@@ -777,7 +780,7 @@
       if (!rows.length) {
         listEl.innerHTML = kind === 'streak'
           ? '<p class="message">Nessun fuoco acceso in questo corso. Raggiungi l’obiettivo di oggi per aprire la classifica.</p>'
-          : '<p class="message">Nessuna risposta giusta nel quiz misto ancora registrata per questo corso.</p>';
+          : `<p class="message">Nessuna risposta giusta ancora registrata per questo corso (${correctFrom}).</p>`;
       } else if (kind === 'streak') {
         listEl.innerHTML = rows.map((row, i) => {
           const trend = row.doneToday ? '<span class="study-rank-trend up">✓ oggi</span>'
@@ -786,11 +789,11 @@
           return `<div class="study-rank-row ${row.uid === currentUser?.uid ? 'current' : ''}"><strong>${i + 1}</strong><span class="study-rank-fire">🔥</span><div><b>${escapeHtml(row.displayName || 'Utente')}</b><small>record ${Number(row.bestStreak || 0)} gg · ${trend}</small></div><em>${row.live} gg</em></div>`;
         }).join('');
       } else {
-        listEl.innerHTML = rows.map((row, i) => `<div class="study-rank-row ${row.uid === currentUser?.uid ? 'current' : ''}"><strong>${i + 1}</strong><span class="study-rank-fire">✅</span><div><b>${escapeHtml(row.displayName || 'Utente')}</b><small>quiz misto</small></div><em>${Number(row.totalCorrect || 0)}</em></div>`).join('');
+        listEl.innerHTML = rows.map((row, i) => `<div class="study-rank-row ${row.uid === currentUser?.uid ? 'current' : ''}"><strong>${i + 1}</strong><span class="study-rank-fire">✅</span><div><b>${escapeHtml(row.displayName || 'Utente')}</b><small>risposte giuste</small></div><em>${Number(row.totalCorrect || 0)}</em></div>`).join('');
       }
       rankEl.textContent = myIndex >= 0
         ? `La tua posizione: #${myIndex + 1}.`
-        : (kind === 'streak' ? 'Non sei ancora in classifica: raggiungi l’obiettivo di oggi.' : 'Non sei ancora in classifica: rispondi bene a qualche domanda nel quiz misto.');
+        : (kind === 'streak' ? 'Non sei ancora in classifica: raggiungi l’obiettivo di oggi.' : `Non sei ancora in classifica: rispondi bene a qualche domanda (${correctFrom}).`);
     }
 
     modal.querySelectorAll('[data-leader-tab]').forEach((btn) => btn.addEventListener('click', () => { modal.dataset.activeTab = btn.dataset.leaderTab; renderTab(btn.dataset.leaderTab); }));

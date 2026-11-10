@@ -325,6 +325,25 @@ async function main() {
     ok(fatteVideo === 5 && Number(dopoVideo?.stats?.quizCount) === 2, `quiz per video: salvato sul cloud (sezione ${fatteVideo}/5, quiz ${dopoVideo?.stats?.quizCount})`);
     const goalVideo = await fsGet(`users/${nuovoUid}/studyGoals/istruttore`);
     ok(Number(goalVideo?.dailyCounts?.[TODAY] || 0) === Number(goal?.dailyCounts?.[TODAY] || 0), 'quiz per video: non conta per l\'obiettivo e la streak');
+    // classifica "risposte giuste": contano misto + video (+ argomento qui sotto)
+    let voceGiuste = null;
+    for (let i = 0; i < 20 && Number(voceGiuste?.totalCorrect || 0) !== Number(dopoVideo?.stats?.correct); i++) { await sleep(300); voceGiuste = await fsGet(`courseLeaderboards/istruttore/entries/${nuovoUid}`); }
+    ok(Number(voceGiuste?.totalCorrect || 0) === Number(dopoVideo?.stats?.correct), `classifica risposte giuste: conta misto e video (${voceGiuste?.totalCorrect} = ${dopoVideo?.stats?.correct} giuste)`);
+    await U.page.evaluate(() => document.querySelectorAll('.modal:not(.hidden), .study-milestone-overlay').forEach((m) => { if (!m.id) m.remove(); else m.classList.add('hidden'); }));
+    await U.page.click('#homeBtn');
+    // quiz per argomento: conta in classifica (risposte giuste) ma non per l'esamone
+    await U.page.click('#startTopicBtn');
+    await U.page.click('#timerNoBtn');
+    for (let i = 0; i < 10; i++) {
+      if (await U.page.locator('#resultsView.active').count()) break;
+      await U.page.locator('#optionsList .option-btn:not(:disabled)').last().click();
+      await U.page.click('#nextQuestionBtn');
+    }
+    ok(await aspetta(U.page, () => document.querySelector('#resultsView.active'), 10000), 'quiz per argomento: arriva ai risultati');
+    await sleep(2500);
+    const dopoArg = await fsGet(`users/${nuovoUid}`);
+    for (let i = 0; i < 20 && Number(voceGiuste?.totalCorrect || 0) !== Number(dopoArg?.stats?.correct); i++) { await sleep(300); voceGiuste = await fsGet(`courseLeaderboards/istruttore/entries/${nuovoUid}`); }
+    ok(Number(dopoArg?.stats?.quizCount) === 3 && Number(voceGiuste?.totalCorrect || 0) === Number(dopoArg?.stats?.correct), `classifica risposte giuste: conta anche l'argomento (${voceGiuste?.totalCorrect} = ${dopoArg?.stats?.correct} giuste, quiz ${dopoArg?.stats?.quizCount})`);
     await U.page.evaluate(() => document.querySelectorAll('.modal:not(.hidden), .study-milestone-overlay').forEach((m) => { if (!m.id) m.remove(); else m.classList.add('hidden'); }));
     await U.page.click('#homeBtn');
     await U.page.click('#startFlashcardsBtn');
@@ -375,6 +394,35 @@ async function main() {
     await fsSet('courseSettings/site', { maintenance: false });
     await U.page.goto(`${SITE}/index.html`, { waitUntil: 'load' });
     ok(await aspetta(U.page, () => !document.getElementById('mainContent').classList.contains('hidden') && !document.body.classList.contains('system-gated'), 20000), 'fine manutenzione: si torna ai corsi');
+  });
+
+  await scenario('Esamone: sblocco con quiz misto + quiz per video', async () => {
+    const eUid = await signUp('esame@prova.it', 'EsameProva1');
+    await authUpdate(eUid, { emailVerified: true, displayName: 'Esame Prova' });
+    const da = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+    const base = {
+      profile: { uid: eUid, email: 'esame@prova.it', firstName: 'Esame', lastName: 'Prova', promoSeen: { nuotifica_v1: 'x', notifiche_v1: 'x' } },
+      access: { appVerified: true, accountStatus: 'approved', courseAccess: { istruttore: true }, termsAcceptedAt: '2026-01-01T00:00:00Z' },
+      version: 2,
+      stats: { totalAnswered: 900, correct: 700, wrong: 200, quizCount: 45, totalScore: 350, averageScore: 7.8, history: [] }
+    };
+    // 400 nel misto + 500 nei quiz per video (e 100 per argomento, che per l'esamone non contano)
+    await fsSet(`users/${eUid}`, { ...base, progress: { mixedCompleted: da(1, 400), mixedCycleSeen: da(1, 400), allAnswered: da(1, 1000), topics: { 'Psicopedagogia': da(901, 1000) }, videoSections: { 'teoria-del-movimento': da(401, 900) } } });
+    await fsSet(`users/${eUid}/studyGoals/istruttore`, { courseId: 'istruttore', dailyTarget: 15, goalMode: 'daily', streak: 0, bestStreak: 0, dailyCounts: {} });
+    const E = await nuovaPagina('esame');
+    await E.page.goto(`${SITE}/index.html`, { waitUntil: 'load' });
+    await aspetta(E.page, () => document.getElementById('loginBtn')?.offsetParent, 15000);
+    await E.page.fill('#emailInput', 'esame@prova.it');
+    await E.page.fill('#passwordInput', 'EsameProva1');
+    await E.page.click('#loginBtn');
+    await aspetta(E.page, () => !document.getElementById('mainContent').classList.contains('hidden'), 20000);
+    await E.page.goto(`${SITE}/istruttore.html`, { waitUntil: 'load' });
+    ok(await aspetta(E.page, () => /900\s*\/\s*1000/.test(document.getElementById('examoneLockText')?.textContent || '') && document.getElementById('startExamoneBtn')?.disabled, 20000), `esamone: 400 misto + 500 video = 900/1000, ancora bloccato ("${(await testo(E.page, '#examoneLockText')).slice(0, 90)}")`);
+    await sleep(2000); // lascia finire il salvataggio della pagina prima di cambiare i dati
+    await fsSet(`users/${eUid}`, { ...base, progress: { mixedCompleted: da(1, 400), mixedCycleSeen: da(1, 400), allAnswered: da(1, 1000), videoSections: { 'teoria-del-movimento': da(401, 1000) } } });
+    await E.page.reload({ waitUntil: 'load' });
+    ok(await aspetta(E.page, () => /Sbloccato/.test(document.getElementById('examoneLockText')?.textContent || '') && !document.getElementById('startExamoneBtn')?.disabled, 20000), `esamone: 400 misto + 600 video = sbloccato ("${(await testo(E.page, '#examoneLockText')).slice(0, 90)}")`);
+    await E.context.close();
   });
 
   await scenario('Utente già esistente: dati dal cloud e corso Bagnino', async () => {

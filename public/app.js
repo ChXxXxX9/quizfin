@@ -1233,8 +1233,16 @@ ${html}`));
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   }
 
+  // Esamone: contano le domande diverse fatte nel quiz misto e nei quiz per video (non quelle per argomento).
+  // Si sblocca quando sono tutte e 1000: solo col misto, solo coi video, o un po' e un po'.
+  function examoneDoneIds() {
+    const ids = new Set(normalizeIdArray(state.progress?.mixedCompleted));
+    Object.values(state.progress?.videoSections || {}).forEach((list) => normalizeIdArray(list).forEach((id) => ids.add(id)));
+    return ids;
+  }
+
   function isExamoneUnlocked() {
-    return (state.progress?.mixedCompleted?.length || 0) >= TOTAL_QUESTIONS;
+    return examoneDoneIds().size >= TOTAL_QUESTIONS;
   }
 
   function getExamoneStatusLabel() {
@@ -1281,9 +1289,10 @@ ${html}`));
       els.examoneCard.classList.toggle('locked', !examUnlocked);
       els.examoneCard.classList.toggle('unlocked', examUnlocked);
       els.startExamoneBtn.disabled = !examUnlocked;
+      const examDone = examoneDoneIds().size;
       els.examoneLockText.textContent = examUnlocked
-        ? 'Sbloccato: hai completato tutte le 1000 domande nel quiz misto.'
-        : `🔒 Bloccato: completa il quiz misto (${completedMixed}/${TOTAL_QUESTIONS}) per sbloccarlo.`;
+        ? `Sbloccato: hai fatto tutte le ${TOTAL_QUESTIONS} domande tra quiz misto e quiz per video.`
+        : `🔒 Bloccato: fai tutte le ${TOTAL_QUESTIONS} domande con il quiz misto o con i quiz per video (${examDone}/${TOTAL_QUESTIONS}) per sbloccarlo.`;
       els.examoneStatusText.textContent = state.examone?.officialAttemptDone
         ? `Primo tentativo ufficiale: ${getExamoneStatusLabel()} · ${state.examone.officialCorrect}/${EXAMONE_TOTAL}`
         : 'Primo tentativo ufficiale non ancora svolto.';
@@ -1299,7 +1308,7 @@ ${html}`));
 
   function startExamone() {
     if (blockedByFeature('exam')) return;
-    if (!isExamoneUnlocked()) return showToast('Esamone bloccato: completa prima tutte le 1000 domande nel quiz misto.');
+    if (!isExamoneUnlocked()) return showToast(`Esamone bloccato: fai prima tutte le ${TOTAL_QUESTIONS} domande con il quiz misto o con i quiz per video (${examoneDoneIds().size}/${TOTAL_QUESTIONS}).`);
     const firstAttempt = !state.examone?.officialAttemptDone;
     const warning = `ATTENZIONE\n\nL’Esamone è una simulazione interna del sito: 50 domande in 20 minuti, soglia 40/50.\n\nSe risulta NON AMMESSO, non significa che all’esame ufficiale non sarai ammesso. È solo un termine generale per indicare l’esito della simulazione. I criteri ufficiali di ammissione non sono questi: non prenderla con ansia.\n\n${firstAttempt ? 'Questo sarà il tuo primo tentativo ufficiale salvato in alto nel sito. I tentativi successivi saranno liberi ma non cambieranno il risultato ufficiale.' : 'Hai già svolto il primo tentativo ufficiale. Puoi rifarlo liberamente, ma il risultato ufficiale non cambierà.'}\n\nVuoi iniziare ora?`;
     if (!confirm(warning)) return;
@@ -1942,7 +1951,10 @@ ${html}`));
     // le altre modalita (argomento, sbagliate, esamone...) restano fuori dal conteggio.
     if (finishedQuiz.mode === 'mixed' && window.QuizStudyTracker?.recordActivity) {
       window.QuizStudyTracker.recordActivity(COURSE_ID, results.length);
-      window.QuizStudyTracker.recordCorrectAnswers?.(COURSE_ID, correct);
+    }
+    // Classifica "risposte giuste": quiz misto, per argomento e per video (non i ripassi degli errori né l'esamone)
+    if (['mixed', 'topic', 'video'].includes(finishedQuiz.mode)) {
+      window.QuizStudyTracker?.recordCorrectAnswers?.(COURSE_ID, correct);
     }
     window.QuizStudyTracker?.syncCourseProgress?.(COURSE_ID, getAnsweredQuestionIdSet().size);
     renderResults(finishedQuiz, results, correct, total, vote, points, durationSeconds, weakestSession);
@@ -2350,7 +2362,7 @@ ${html}`));
       { id: 'ten_marked', icon: '⭐', name: 'Archivista', desc: 'Salva almeno 10 domande segnate.', unlocked: state.markedQuestions.length >= 10 },
       { id: 'flash_50', icon: '⚡', name: 'Riflessi rapidi', desc: 'Completa 50 flash card.', unlocked: state.flashStats.total >= 50 },
       { id: 'accuracy_90', icon: '🛡️', name: 'Precisione alta', desc: 'Raggiungi almeno il 90% di precisione globale.', unlocked: state.stats.totalAnswered >= 50 && accuracy >= 90 },
-      { id: 'examone_unlock', icon: '🔓', name: 'Esamone sbloccato', desc: 'Completa le 1000 domande del percorso misto.', unlocked: isExamoneUnlocked() },
+      { id: 'examone_unlock', icon: '🔓', name: 'Esamone sbloccato', desc: 'Fai tutte le 1000 domande con il quiz misto o con i quiz per video.', unlocked: isExamoneUnlocked() },
       { id: 'examone_passed', icon: '🏅', name: 'Ammesso', desc: 'Supera l’Esamone con almeno 40/50.', unlocked: state.examone?.officialStatus === 'passed' }
     ];
   }
